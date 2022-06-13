@@ -1,0 +1,8 @@
+# Number of components and their range of values
+num_components, 2
+color_map, ["Blues", "Reds"]
+titles, ["Conserved species ($c$)", "Non-conserved species ($m$)"]
+c0_range, [-1.5,1.5]
+c1_range, [-1.0, 1.0]
+figure_size, [15, 6]
+
