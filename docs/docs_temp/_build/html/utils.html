@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utils package &mdash; Phase Field Stability Analysis v1.0 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Phase Field Stability Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">utils package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-utils.dynamical_equations">utils.dynamical_equations module</a></li>
+<li><a class="reference internal" href="#module-utils.file_operations">utils.file_operations module</a></li>
+<li><a class="reference internal" href="#module-utils.free_energy">utils.free_energy module</a></li>
+<li><a class="reference internal" href="#module-utils.geometry">utils.geometry module</a></li>
+<li><a class="reference internal" href="#module-utils.initial_conditions">utils.initial_conditions module</a></li>
+<li><a class="reference internal" href="#module-utils.reaction_rates">utils.reaction_rates module</a></li>
+<li><a class="reference internal" href="#module-utils.simulation_helper">utils.simulation_helper module</a></li>
+<li><a class="reference internal" href="#module-utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Phase Field Stability Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>utils package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/utils.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="utils-package">
+<h1>utils package<a class="headerlink" href="#utils-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-utils.dynamical_equations">
+<span id="utils-dynamical-equations-module"></span><h2>utils.dynamical_equations module<a class="headerlink" href="#module-utils.dynamical_equations" title="Permalink to this headline">¶</a></h2>
+<p>Module that assembles the model equations for spatiotemporal dynamics of concentration fields.</p>
+<dl class="class">
+<dt id="utils.dynamical_equations.TwoComponentModelBRD">
+<em class="property">class </em><code class="descclassname">utils.dynamical_equations.</code><code class="descname">TwoComponentModelBRD</code><span class="sig-paren">(</span><em>mobility_1</em>, <em>mobility_2</em>, <em>rate_constant_1</em>, <em>rate_constant_2</em>, <em>free_energy</em>, <em>c_vector</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/dynamical_equations.html#TwoComponentModelBRD"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.dynamical_equations.TwoComponentModelBRD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Two component system, with Model B for species 1 and Model AB with reactions for species 2</p>
+<p>This class describes the spatiotemporal dynamics of concentration fields two component system given by the below
+expression:</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\partial c_1 / \partial t = \nabla (M_1 \nabla \mu_1 (c_1, c_2))\\\partial c_2 / \partial t = \nabla (M_2 \nabla \mu_2 (c_1, c_2)) + k_1 c_1 - k_2 c_2\end{aligned}\end{align} \]</div>
+<p>Species 1 relaxes via Model B dynamics, with a mobility coefficient <span class="math notranslate nohighlight">\(M_1\)</span>. It’s total amount in the domain is
+conserved.</p>
+<p>Species 2 undergoes a Model AB dynamics. Detailed balance is broken in this equation. It’s mobility coefficient is
+<span class="math notranslate nohighlight">\(M_2\)</span> and is produced by species 1 with a rate constant <span class="math notranslate nohighlight">\(k_1\)</span> and degrades with a rate constant
+<span class="math notranslate nohighlight">\(k_2\)</span></p>
+<dl class="method">
+<dt id="utils.dynamical_equations.TwoComponentModelBRD.step_once">
+<code class="descname">step_once</code><span class="sig-paren">(</span><em>c_vector</em>, <em>dt</em>, <em>max_sweeps</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/dynamical_equations.html#TwoComponentModelBRD.step_once"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.dynamical_equations.TwoComponentModelBRD.step_once" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that solves the model equations over a time step of dt to get the concentration profiles.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like <span class="math notranslate nohighlight">\([c_1, c_2]\)</span>.
+The concentration variables <span class="math notranslate nohighlight">\(c_1\)</span> and <span class="math notranslate nohighlight">\(c_2\)</span> must be instances of the class
+<code class="xref py py-class docutils literal notranslate"><span class="pre">fipy.CellVariable</span></code></p>
+<p class="last">dt (float): Size of time step to solve the model equations over once
+max_sweeps (int): Number of times to sweep using the function sweep() in the fipy package</p>
+</dd>
+<dt>Returns:</dt>
+<dd><p class="first">residuals (numpy.ndarray): A 2x1 numpy array containing residuals after solving the equations</p>
+<p class="last">max_change (float): Maximum change in the concentration fields at any given position for the time interval
+dt</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-utils.file_operations">
+<span id="utils-file-operations-module"></span><h2>utils.file_operations module<a class="headerlink" href="#module-utils.file_operations" title="Permalink to this headline">¶</a></h2>
+<p>Module that contains helper functions to read and write files during simulations</p>
+<dl class="function">
+<dt id="utils.file_operations.input_parse">
+<code class="descclassname">utils.file_operations.</code><code class="descname">input_parse</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/file_operations.html#input_parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.file_operations.input_parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input parameters from file and return them as a dictionary</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename (string): Name of file that contains the input parameters for simulations</dd>
+<dt>Returns:</dt>
+<dd>input_parameters (dict): A dictionary that contains (key,value) pairs of (parameter name, parameter value)</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.file_operations.write_input_params">
+<code class="descclassname">utils.file_operations.</code><code class="descname">write_input_params</code><span class="sig-paren">(</span><em>input_filename</em>, <em>target_filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/file_operations.html#write_input_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.file_operations.write_input_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write input parameters to a target file</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">input_filename (string): Name of file that contains the input parameters for simulations</p>
+<p class="last">target_filename (string): Name of target file to write these parameters to</p>
+</dd>
+<dt>Returns:</dt>
+<dd>input_parameters (dict): A dictionary that contains (key,value) pairs of (parameter name, parameter value)</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.file_operations.write_spatial_variables_to_hdf5_file">
+<code class="descclassname">utils.file_operations.</code><code class="descname">write_spatial_variables_to_hdf5_file</code><span class="sig-paren">(</span><em>step</em>, <em>total_steps</em>, <em>c_vector</em>, <em>geometry</em>, <em>free_energy</em>, <em>target_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/file_operations.html#write_spatial_variables_to_hdf5_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.file_operations.write_spatial_variables_to_hdf5_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to write out the concentration fields and chemical potentials to a hdf5 file</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">step (int): The step number to write out the spatial variables data</p>
+<p>total_steps (int): Total number of snapshots at which we need to store the concentration fields</p>
+<p>c_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like <span class="math notranslate nohighlight">\([c_1, c_2, ... c_n]\)</span>.
+The concentration variables <span class="math notranslate nohighlight">\(c_i\)</span> must be instances of the class <code class="xref py py-class docutils literal notranslate"><span class="pre">fipy.CellVariable</span></code> or equivalent.</p>
+<p>geometry (Geometry): An instance of class <a class="reference internal" href="#utils.geometry.Geometry" title="utils.geometry.Geometry"><code class="xref py py-class docutils literal notranslate"><span class="pre">utils.geometry.Geometry</span></code></a> that contains mesh description</p>
+<p>free_energy (utils.free_energy): An instance of one of the free energy classes present in
+<a class="reference internal" href="#module-utils.free_energy" title="utils.free_energy"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.free_energy</span></code></a></p>
+<p class="last">target_file (string): Target file to write out the statistics</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.file_operations.write_stats">
+<code class="descclassname">utils.file_operations.</code><code class="descname">write_stats</code><span class="sig-paren">(</span><em>t</em>, <em>dt</em>, <em>steps</em>, <em>c_vector</em>, <em>geometry</em>, <em>free_energy</em>, <em>residuals</em>, <em>max_change</em>, <em>target_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/file_operations.html#write_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.file_operations.write_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes out simulation statistics</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">t (float): Current time</p>
+<p>dt (float): Size of current time step</p>
+<p>steps (int): Number of time steps taken</p>
+<p>c_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like <span class="math notranslate nohighlight">\([c_1, c_2, ... c_n]\)</span>.
+The concentration variables <span class="math notranslate nohighlight">\(c_i\)</span> must be instances of the class <code class="xref py py-class docutils literal notranslate"><span class="pre">fipy.CellVariable</span></code> or equivalent.</p>
+<p>geometry (Geometry): An instance of class <a class="reference internal" href="#utils.geometry.Geometry" title="utils.geometry.Geometry"><code class="xref py py-class docutils literal notranslate"><span class="pre">utils.geometry.Geometry</span></code></a> that contains mesh description
+free_energy (utils.free_energy): An instance of one of the free energy classes present in
+<a class="reference internal" href="#module-utils.free_energy" title="utils.free_energy"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.free_energy</span></code></a></p>
+<p>residuals (numpy.ndarray): An array of the same size as c_vector, that contains the residuals when solving the
+dynamical equations at this current time step</p>
+<p>max_change (float): Maximum rate of change of concentration fields at any position</p>
+<p class="last">target_file (string): Target file to write out the statistics</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-utils.free_energy">
+<span id="utils-free-energy-module"></span><h2>utils.free_energy module<a class="headerlink" href="#module-utils.free_energy" title="Permalink to this headline">¶</a></h2>
+<p>Module that contains classes describing different free energies.</p>
+<dl class="class">
+<dt id="utils.free_energy.TwoCompDoubleWellFHCrossQuadratic">
+<em class="property">class </em><code class="descclassname">utils.free_energy.</code><code class="descname">TwoCompDoubleWellFHCrossQuadratic</code><span class="sig-paren">(</span><em>alpha</em>, <em>beta</em>, <em>gamma</em>, <em>lamda</em>, <em>kappa</em>, <em>c_bar_1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/free_energy.html#TwoCompDoubleWellFHCrossQuadratic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.free_energy.TwoCompDoubleWellFHCrossQuadratic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Free energy of two component system with a quartic well and quadratic well self, and FH cross interactions.</p>
+<p>This class describes the free energy of a two component system given by the below expression:</p>
+<div class="math notranslate nohighlight">
+\[f[c_1, c_2] = 0.25 \alpha (c_1-\bar{c}_1)^4 + 0.5 \beta (c_1-\bar{c}_1)^2 + \gamma c_1 c_2
+              + 0.5 \lambda c^2_2 + 0.5 \kappa |\nabla c_1|^2\]</div>
+<p>Interactions between molecules of species 1 are described by a quartic-well potential. If <span class="math notranslate nohighlight">\(\beta &lt; 0\)</span>, then
+we get a double-well and species 1 can phase separate by itself.</p>
+<p>Interactions between molecules of species 2 are described by a quadratic potential. For this term, <span class="math notranslate nohighlight">\(\lambda\)</span>
+has to be &gt; 0. Otherwise, the self diffusion of species 2 will cause all molecules to collapse into a point.</p>
+<p>The cross interactions between the species are described by a mean-field product of concentrations with the
+interaction strength captured by a Flory parameter <span class="math notranslate nohighlight">\(\gamma\)</span></p>
+<dl class="method">
+<dt id="utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.calculate_fe">
+<code class="descname">calculate_fe</code><span class="sig-paren">(</span><em>c_vector</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/free_energy.html#TwoCompDoubleWellFHCrossQuadratic.calculate_fe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.calculate_fe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate free energy according to the expression in class description.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like <span class="math notranslate nohighlight">\([c_1, c_2]\)</span>.
+The concentration variables <span class="math notranslate nohighlight">\(c_1\)</span> and <span class="math notranslate nohighlight">\(c_2\)</span> must be instances of the class
+<code class="xref py py-class docutils literal notranslate"><span class="pre">fipy.CellVariable</span></code> or equivalent. These instances should have an attribute called <code class="xref py py-attr docutils literal notranslate"><span class="pre">grad.mag</span></code>
+that returns the magnitude of gradient of the concentration field for every position in the mesh to compute
+the surface tension contribution of the free energy</dd>
+<dt>Returns:</dt>
+<dd>free_energy (float): Free energy value</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.calculate_jacobian">
+<code class="descname">calculate_jacobian</code><span class="sig-paren">(</span><em>c_vector</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/free_energy.html#TwoCompDoubleWellFHCrossQuadratic.calculate_jacobian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.calculate_jacobian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Jacobian matrix of coefficients to feed to the transport equations.</p>
+<p>In calculating the Jacobian, we ignore the surface tension and any spatially dependent terms and only take the
+bulk part of the free energy that depends on the concentration fields:</p>
+<div class="math notranslate nohighlight">
+\[J_{11} = \delta F_{bulk} / \delta c^2_1 = 3 \alpha (c_1 - \bar{c}_1)^2 + \beta\]</div>
+<div class="math notranslate nohighlight">
+\[J_{12} = \delta F_{bulk} / \delta c_1 \delta c_2 = \gamma\]</div>
+<div class="math notranslate nohighlight">
+\[J_{21} = \delta F_{bulk} / \delta c_1 \delta c_2 = \gamma\]</div>
+<div class="math notranslate nohighlight">
+\[J_{22} = \delta F_{bulk} / \delta c^2_2 = \lambda\]</div>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like <span class="math notranslate nohighlight">\([c_1, c_2]\)</span>.The
+concentration variables <span class="math notranslate nohighlight">\(c_1\)</span> and <span class="math notranslate nohighlight">\(c_2\)</span> must be instances of the class
+<code class="xref py py-class docutils literal notranslate"><span class="pre">fipy.CellVariable</span></code> or equivalent</dd>
+<dt>Returns:</dt>
+<dd>jacobian (numpy.ndarray): A 2x2 Jacobian matrix, with each entry itself being a vector of the same size as
+c_vector[0]</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.calculate_mu">
+<code class="descname">calculate_mu</code><span class="sig-paren">(</span><em>c_vector</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/free_energy.html#TwoCompDoubleWellFHCrossQuadratic.calculate_mu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.calculate_mu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate chemical potential of the species.</p>
+<p>Chemical potential of species 1:</p>
+<div class="math notranslate nohighlight">
+\[\mu_1[c_1, c_2] = \delta F / \delta c_1 = \alpha (c_1-\bar{c}_1)^3 + \beta (c_1-\bar{c}_1)
+                   + \gamma c_2 - \kappa \nabla^2 c_1\]</div>
+<p>Chemical potential of species 2:</p>
+<div class="math notranslate nohighlight">
+\[\mu_2[c_1, c_2] = \gamma c_1 + \lambda c_2\]</div>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like <span class="math notranslate nohighlight">\([c_1, c_2]\)</span>. The
+concentration variables <span class="math notranslate nohighlight">\(c_1\)</span> and <span class="math notranslate nohighlight">\(c_2\)</span> must be instances of the class
+<code class="xref py py-class docutils literal notranslate"><span class="pre">fipy.CellVariable</span></code> or equivalent. These instances should have an attribute called
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">faceGrad.divergence</span></code> that returns the Laplacian of the concentration field for every position in the
+mesh to compute the surface tension contribution to the chemical potential of species 1</dd>
+<dt>Returns:</dt>
+<dd>mu (list): A 2x1 vector of chemical potentials that looks like <span class="math notranslate nohighlight">\([\mu_1, \mu_2]\)</span></dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.kappa">
+<code class="descname">kappa</code><a class="headerlink" href="#utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.kappa" title="Permalink to this definition">¶</a></dt>
+<dd><p>Getter for the private variable self._kappa.
+This is used to set up the surface tension term in the dynamical equations</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-utils.geometry">
+<span id="utils-geometry-module"></span><h2>utils.geometry module<a class="headerlink" href="#module-utils.geometry" title="Permalink to this headline">¶</a></h2>
+<p>Module that contains functions to set up discrete spatial mesh for simulations</p>
+<dl class="class">
+<dt id="utils.geometry.Geometry">
+<em class="property">class </em><code class="descclassname">utils.geometry.</code><code class="descname">Geometry</code><span class="sig-paren">(</span><em>mesh=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/geometry.html#Geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.geometry.Geometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class that stores geometry for simulations including mesh and boundary conditions.</p>
+<dl class="method">
+<dt id="utils.geometry.Geometry.circular_mesh_2d">
+<code class="descname">circular_mesh_2d</code><span class="sig-paren">(</span><em>radius</em>, <em>cell_size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/geometry.html#Geometry.circular_mesh_2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.geometry.Geometry.circular_mesh_2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that creates a 2d circular mesh.</p>
+<p>This function uses the Gmsh2D builtin function from the fipy package to create a 2d circular mesh.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">radius (float): Radius of the total domain</p>
+<p class="last">cell_size (float): Side length of a discrete mesh element</p>
+</dd>
+<dt>Returns:</dt>
+<dd>mesh (Gmsh2D): A 2d circular mesh that is an instance of Gmsh2D</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="utils.geometry.Geometry.cube_mesh_3d">
+<code class="descname">cube_mesh_3d</code><span class="sig-paren">(</span><em>length</em>, <em>dx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/geometry.html#Geometry.cube_mesh_3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.geometry.Geometry.cube_mesh_3d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that creates a 3d cube mesh.</p>
+<p>This function uses the Grid3D function from the fipy package to create a 3d cubical mesh</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">length (float): Length of the cubical domain</p>
+<p class="last">dx (float): Side length of a discrete mesh element in the cubical domain</p>
+</dd>
+<dt>Returns:</dt>
+<dd>mesh (Grid2D): A 2d cubical mesh that is an instance of fipy.Grid3D</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="utils.geometry.Geometry.square_mesh_2d">
+<code class="descname">square_mesh_2d</code><span class="sig-paren">(</span><em>length</em>, <em>dx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/geometry.html#Geometry.square_mesh_2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.geometry.Geometry.square_mesh_2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that creates a 2d square mesh.</p>
+<p>This function uses the Grid2D function from the fipy package to create a 2d square mesh</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">length (float): Length of the square domain</p>
+<p class="last">dx (float): Side length of a discrete mesh element in the square domain</p>
+</dd>
+<dt>Returns:</dt>
+<dd>mesh (Grid2D): A 2d square mesh that is an instance of fipy.Grid2D</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-utils.initial_conditions">
+<span id="utils-initial-conditions-module"></span><h2>utils.initial_conditions module<a class="headerlink" href="#module-utils.initial_conditions" title="Permalink to this headline">¶</a></h2>
+<p>Module that contains helper functions to initialize concentration fields</p>
+<dl class="function">
+<dt id="utils.initial_conditions.initialize_uniform_profile">
+<code class="descclassname">utils.initial_conditions.</code><code class="descname">initialize_uniform_profile</code><span class="sig-paren">(</span><em>c_vector</em>, <em>values</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/initial_conditions.html#initialize_uniform_profile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.initial_conditions.initialize_uniform_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that initializes a spatially uniform value for concentration variables in c_vector</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">c_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like <span class="math notranslate nohighlight">\([c_1, c_2, ... c_n]\)</span>.
+The concentration variables <span class="math notranslate nohighlight">\(c_i\)</span> must be instances of the class <code class="xref py py-class docutils literal notranslate"><span class="pre">fipy.CellVariable</span></code> or equivalent.</p>
+<p class="last">values (numpy.ndarray): An nx1 vector of values to set the concentration fields to</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.initial_conditions.nucleate_spherical_seed">
+<code class="descclassname">utils.initial_conditions.</code><code class="descname">nucleate_spherical_seed</code><span class="sig-paren">(</span><em>concentration</em>, <em>value</em>, <em>dimension</em>, <em>geometry</em>, <em>nucleus_size</em>, <em>location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/initial_conditions.html#nucleate_spherical_seed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.initial_conditions.nucleate_spherical_seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that nucleates a circular or spherical region of high concentration</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">concentration (fipy.CellVariable or equivalent): A concentration variable</p>
+<p>value (float): The value of concentration within the nucleus</p>
+<p>dimension (int): Can be 1, 2, or 3 corresponding to a 1D, 2D or 3D mesh respectively</p>
+<p>geometry (Geometry): An instance of class <a class="reference internal" href="#utils.geometry.Geometry" title="utils.geometry.Geometry"><code class="xref py py-class docutils literal notranslate"><span class="pre">utils.geometry.Geometry</span></code></a> that contains mesh description</p>
+<p>nucleus_size (float): Radius of the circular or spherical nucleus</p>
+<p class="last">location (numpy.ndarray): A vector containing the coordinates of the center of the nucleus relative to origin</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-utils.reaction_rates">
+<span id="utils-reaction-rates-module"></span><h2>utils.reaction_rates module<a class="headerlink" href="#module-utils.reaction_rates" title="Permalink to this headline">¶</a></h2>
+<p>Module that contains classes to implement different reaction rates</p>
+<dl class="class">
+<dt id="utils.reaction_rates.FirstOrderReaction">
+<em class="property">class </em><code class="descclassname">utils.reaction_rates.</code><code class="descname">FirstOrderReaction</code><span class="sig-paren">(</span><em>k</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/reaction_rates.html#FirstOrderReaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.reaction_rates.FirstOrderReaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rate law for a simple first order reaction with constant rate coefficient</p>
+<div class="math notranslate nohighlight">
+\[rate(c) = k c\]</div>
+<dl class="method">
+<dt id="utils.reaction_rates.FirstOrderReaction.rate">
+<code class="descname">rate</code><span class="sig-paren">(</span><em>concentration</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/reaction_rates.html#FirstOrderReaction.rate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.reaction_rates.FirstOrderReaction.rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate and return the reaction rate given a concentration value.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>concentration (fipy.CellVariable): Concentration variable</dd>
+<dt>Returns:</dt>
+<dd>reaction_rate (fipy.CellVariable): Reaction rate</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-utils.simulation_helper">
+<span id="utils-simulation-helper-module"></span><h2>utils.simulation_helper module<a class="headerlink" href="#module-utils.simulation_helper" title="Permalink to this headline">¶</a></h2>
+<p>Module that contains helper functions to run simulations that can be used by run_simulation.py</p>
+<dl class="function">
+<dt id="utils.simulation_helper.initialize_concentrations">
+<code class="descclassname">utils.simulation_helper.</code><code class="descname">initialize_concentrations</code><span class="sig-paren">(</span><em>input_params</em>, <em>simulation_geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/simulation_helper.html#initialize_concentrations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.simulation_helper.initialize_concentrations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set initial conditions for the concentration profiles</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs
+that describe the initial conditions</p>
+<p class="last">simulation_geometry (Geometry): Instance of class <a class="reference internal" href="#utils.geometry.Geometry" title="utils.geometry.Geometry"><code class="xref py py-class docutils literal notranslate"><span class="pre">utils.geometry.Geometry</span></code></a> that describes the mesh
+geometry</p>
+</dd>
+<dt>Returns:</dt>
+<dd>concentration_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like
+<span class="math notranslate nohighlight">\([c_1, c_2, ... c_n]\)</span>. The concentration variables <span class="math notranslate nohighlight">\(c_i\)</span> must be instances of the class
+<code class="xref py py-class docutils literal notranslate"><span class="pre">fipy.CellVariable</span></code> or equivalent.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.simulation_helper.set_free_energy">
+<code class="descclassname">utils.simulation_helper.</code><code class="descname">set_free_energy</code><span class="sig-paren">(</span><em>input_params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/simulation_helper.html#set_free_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.simulation_helper.set_free_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set free energy of interactions</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs
+that describe the free energy</dd>
+<dt>Returns:</dt>
+<dd>free_en (utils.free_energy): An instance of one of the classes in mod:<cite>utils.free_energy</cite></dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.simulation_helper.set_mesh_geometry">
+<code class="descclassname">utils.simulation_helper.</code><code class="descname">set_mesh_geometry</code><span class="sig-paren">(</span><em>input_params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/simulation_helper.html#set_mesh_geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.simulation_helper.set_mesh_geometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the mesh geometry depending on the options in input_parameters</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs
+that describe the mesh geometry</dd>
+<dt>Returns:</dt>
+<dd>simulation_geometry (Geometry): Instance of class <a class="reference internal" href="#utils.geometry.Geometry" title="utils.geometry.Geometry"><code class="xref py py-class docutils literal notranslate"><span class="pre">utils.geometry.Geometry</span></code></a></dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="utils.simulation_helper.set_model_equations">
+<code class="descclassname">utils.simulation_helper.</code><code class="descname">set_model_equations</code><span class="sig-paren">(</span><em>input_params</em>, <em>concentration_vector</em>, <em>free_en</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils/simulation_helper.html#set_model_equations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.simulation_helper.set_model_equations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set dynamical equations for the model</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs
+that describe the parameters associated with the dynamical model</p>
+<p>concentration_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like
+<span class="math notranslate nohighlight">\([c_1, c_2, ... c_n]\)</span>. The concentration variables <span class="math notranslate nohighlight">\(c_i\)</span> must be instances of the class
+<code class="xref py py-class docutils literal notranslate"><span class="pre">fipy.CellVariable</span></code> or equivalent.</p>
+<p class="last">free_en (utils.free_energy): An instance of one of the classes in mod:<cite>utils.free_energy</cite></p>
+</dd>
+<dt>Returns:</dt>
+<dd>equations (utils.dynamical_equations): An instance of one of the classes in mod:<cite>utils.dynamical_equations</cite></dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-utils">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-utils" title="Permalink to this headline">¶</a></h2>
+<p>Module <a class="reference internal" href="#module-utils" title="utils"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils</span></code></a> contains helper modules to perform phase field simulations</p>
+<dl class="docutils">
+<dt><a class="reference internal" href="#module-utils.geometry" title="utils.geometry"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.geometry</span></code></a></dt>
+<dd>Contains functions to help set up the mesh geometry for phase field simulations</dd>
+<dt><a class="reference internal" href="#module-utils.initial_conditions" title="utils.initial_conditions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.initial_conditions</span></code></a></dt>
+<dd>Contains functions to help set up initial condition of concentration fields for the phase
+field simulations</dd>
+<dt><a class="reference internal" href="#module-utils.free_energy" title="utils.free_energy"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.free_energy</span></code></a></dt>
+<dd>Contains class definitions of different interaction free energies between molecular species in the
+system</dd>
+<dt><a class="reference internal" href="#module-utils.reaction_rates" title="utils.reaction_rates"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.reaction_rates</span></code></a></dt>
+<dd>Contains class definitions of different forms of reaction rates that can produce or degrade species in the system</dd>
+<dt><a class="reference internal" href="#module-utils.dynamical_equations" title="utils.dynamical_equations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.dynamical_equations</span></code></a></dt>
+<dd>Contains class definitions to (i) implement different kinds of spatio-temporal dynamics of concentrations of the
+different molecular species (ii) numerical methods to solve them</dd>
+<dt><a class="reference internal" href="#module-utils.file_operations" title="utils.file_operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.file_operations</span></code></a></dt>
+<dd>Contains functions to read and write files in the course of phase field simulations</dd>
+<dt><a class="reference internal" href="#module-utils.simulation_helper" title="utils.simulation_helper"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.simulation_helper</span></code></a></dt>
+<dd>Contains helper functions to run simulations that can be used by run_simulation.py</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Pradeep Natarajan.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

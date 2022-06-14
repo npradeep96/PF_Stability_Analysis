@@ -15,4 +15,6 @@
     different molecular species (ii) numerical methods to solve them
 :mod:`utils.file_operations`
     Contains functions to read and write files in the course of phase field simulations
+:mod:`utils.simulation_helper`
+    Contains helper functions to run simulations that can be used by run_simulation.py
 """

@@ -12,8 +12,8 @@ def set_mesh_geometry(input_params):
     """Set the mesh geometry depending on the options in input_parameters
 
     Args:
-        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value
-                             pairs that describe the mesh geometry
+        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs
+        that describe the mesh geometry
 
     Returns:
          simulation_geometry (Geometry): Instance of class :class:`utils.geometry.Geometry`
@@ -46,15 +46,16 @@ def initialize_concentrations(input_params, simulation_geometry):
     """Set initial conditions for the concentration profiles
 
     Args:
-        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value
-                             pairs that describe the initial conditions
+        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs
+        that describe the initial conditions
+
         simulation_geometry (Geometry): Instance of class :class:`utils.geometry.Geometry` that describes the mesh
-                                        geometry
+        geometry
 
     Returns:
         concentration_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like
-                                             :math:`[c_1, c_2, ... c_n]`. The concentration variables :math:`c_i` must
-                                             be instances of the class :class:`fipy.CellVariable` or equivalent.
+        :math:`[c_1, c_2, ... c_n]`. The concentration variables :math:`c_i` must be instances of the class
+        :class:`fipy.CellVariable` or equivalent.
     """
 
     # Initialize concentration_vector
@@ -81,8 +82,8 @@ def set_free_energy(input_params):
     """Set free energy of interactions
 
     Args:
-        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value
-                             pairs that describe the free energy
+        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs
+        that describe the free energy
 
     Returns:
         free_en (utils.free_energy): An instance of one of the classes in mod:`utils.free_energy`
@@ -102,11 +103,13 @@ def set_model_equations(input_params, concentration_vector, free_en):
     """Set dynamical equations for the model
 
     Args:
-        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value
-                             pairs that describe the parameters associated with the dynamical model
+        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs
+        that describe the parameters associated with the dynamical model
+
         concentration_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like
-                                             :math:`[c_1, c_2, ... c_n]`. The concentration variables :math:`c_i` must
-                                             be instances of the class :class:`fipy.CellVariable` or equivalent.
+        :math:`[c_1, c_2, ... c_n]`. The concentration variables :math:`c_i` must be instances of the class
+        :class:`fipy.CellVariable` or equivalent.
+
         free_en (utils.free_energy): An instance of one of the classes in mod:`utils.free_energy`
 
     Returns:

@@ -29,11 +29,16 @@ class TwoCompDoubleWellFHCrossQuadratic:
 
         Args:
             alpha (float): Parameter associated with the quartic term :math:`\\alpha (c_1-\\bar{c}_1)^4` of species 1
+
             beta (float): Parameter associated with the quadratic term :math:`\\beta (c_1-\\bar{c}_1)^2` of species 1
+
             gamma (float): Parameter that describes the cross-interactions between the species :math:`\\gamma c_1 c_2`
+
             lamda (float): Parameter that describes the self interaction of species 2 using :math:`\\lambda c^2_2`
+
             kappa (float): Parameter that describes the surface tension associated with species 1
-                           :math:`\\kappa/2 |\\nabla c_1|^2`
+            :math:`\\kappa/2 |\\nabla c_1|^2`
+
             c_bar_1 (float): Critical concentration of species 1 at the onset of phase separation
         """
 
@@ -60,11 +65,10 @@ class TwoCompDoubleWellFHCrossQuadratic:
 
         Args:
             c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.
-                                      The concentration variables :math:`c_1` and :math:`c_2` must be instances of the
-                                      class :class:`fipy.CellVariable` or equivalent. These instances should have an
-                                      attribute called :attr:`.grad.mag` that returns the magnitude of gradient of the
-                                      concentration field for every position in the mesh to compute the surface tension
-                                      contribution of the free energy
+            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class
+            :class:`fipy.CellVariable` or equivalent. These instances should have an attribute called :attr:`.grad.mag`
+            that returns the magnitude of gradient of the concentration field for every position in the mesh to compute
+            the surface tension contribution of the free energy
 
         Returns:
             free_energy (float): Free energy value
@@ -109,15 +113,14 @@ class TwoCompDoubleWellFHCrossQuadratic:
 
 
         Args:
-            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.
-                                      The concentration variables :math:`c_1` and :math:`c_2` must be instances of the
-                                      class :class:`fipy.CellVariable` or equivalent. These instances should have an
-                                      attribute called :attr:`.faceGrad.divergence` that returns the Laplacian of the
-                                      concentration field for every position in the mesh to compute the surface tension
-                                      contribution to the chemical potential of species 1
+            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`. The
+            concentration variables :math:`c_1` and :math:`c_2` must be instances of the class
+            :class:`fipy.CellVariable` or equivalent. These instances should have an attribute called
+            :attr:`.faceGrad.divergence` that returns the Laplacian of the concentration field for every position in the
+            mesh to compute the surface tension contribution to the chemical potential of species 1
 
         Returns:
-            mu (list): A 2x1 vector of chemical potentials that looks like :math:`[mu_1, mu_2]`
+            mu (list): A 2x1 vector of chemical potentials that looks like :math:`[\\mu_1, \\mu_2]`
         """
 
         # Check that c_vector satisfies the necessary conditions
@@ -149,23 +152,24 @@ class TwoCompDoubleWellFHCrossQuadratic:
         bulk part of the free energy that depends on the concentration fields:
 
         .. math::
+            J_{11} = \\delta F_{bulk} / \\delta c^2_1 = 3 \\alpha (c_1 - \\bar{c}_1)^2 + \\beta
 
-            J[c_1, c_2] = \\begin{bmatrix}
-                          \\delta F_{bulk} / \\delta c^2_1 & \\delta F_{bulk} / \\delta c_1 \\delta c_2 \\\
-                          \\delta F_{bulk} / \\delta c_1 \\delta c_2 & \\delta F_{bulk} / \\delta c^2_2
-                          \\end{bmatrix}
-                        = \\begin{bmatrix}
-                          3 \\alpha (c_1 - \\bar{c}_1)^2 + \\beta & \\gamma \\\
-                          \\gamma & \\lambda
-                          \\end{bmatrix}
+        .. math::
+            J_{12} = \\delta F_{bulk} / \\delta c_1 \\delta c_2 = \\gamma
+
+        .. math::
+            J_{21} = \\delta F_{bulk} / \\delta c_1 \\delta c_2 = \\gamma
+
+        .. math::
+            J_{22} = \\delta F_{bulk} / \\delta c^2_2 = \\lambda
 
         Args:
-            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.
-                                      The concentration variables :math:`c_1` and :math:`c_2` must be instances of the
-                                      class :class:`fipy.CellVariable` or equivalent
+            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.The
+            concentration variables :math:`c_1` and :math:`c_2` must be instances of the class
+            :class:`fipy.CellVariable` or equivalent
         Returns:
             jacobian (numpy.ndarray): A 2x2 Jacobian matrix, with each entry itself being a vector of the same size as
-                                      c_vector[0]
+            c_vector[0]
         """
 
         # Check that c_vector satisfies the necessary conditions

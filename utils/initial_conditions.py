@@ -11,8 +11,8 @@ def initialize_uniform_profile(c_vector, values):
 
     Args:
         c_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like :math:`[c_1, c_2, ... c_n]`.
-                                  The concentration variables :math:`c_i` must be instances of the class
-                                  :class:`fipy.CellVariable` or equivalent.
+        The concentration variables :math:`c_i` must be instances of the class :class:`fipy.CellVariable` or equivalent.
+
         values (numpy.ndarray): An nx1 vector of values to set the concentration fields to
     """
 
@@ -26,10 +26,15 @@ def nucleate_spherical_seed(concentration, value, dimension, geometry, nucleus_s
 
     Args:
          concentration (fipy.CellVariable or equivalent): A concentration variable
+
          value (float): The value of concentration within the nucleus
+
          dimension (int): Can be 1, 2, or 3 corresponding to a 1D, 2D or 3D mesh respectively
+
          geometry (Geometry): An instance of class :class:`utils.geometry.Geometry` that contains mesh description
+
          nucleus_size (float): Radius of the circular or spherical nucleus
+
          location (numpy.ndarray): A vector containing the coordinates of the center of the nucleus relative to origin
     """
     # Ensure that the dimensions are the same as the number of coordinates that describe the center of the nucleus

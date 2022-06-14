@@ -14,9 +14,9 @@ class TwoComponentModelBRD:
 
     .. math::
 
-        \\partial c_1 / \\partial t = \\nabla \\dot (M_1 \\nabla \\mu_1 (c_1, c_2))
+        \\partial c_1 / \\partial t = \\nabla (M_1 \\nabla \\mu_1 (c_1, c_2))
 
-        \\partial c_2 / \\partial t = \\nabla \\dot (M_2 \\nabla \\mu_2 (c_1, c_2)) + k_1 c_1 - k_2 c_2
+        \\partial c_2 / \\partial t = \\nabla (M_2 \\nabla \\mu_2 (c_1, c_2)) + k_1 c_1 - k_2 c_2
 
     Species 1 relaxes via Model B dynamics, with a mobility coefficient :math:`M_1`. It's total amount in the domain is
     conserved.
@@ -31,13 +31,19 @@ class TwoComponentModelBRD:
 
         Args:
             mobility_1 (float): Mobility of species 1
+
             mobility_2 (float): Mobility of species 2
+
             rate_constant_1 (float): Rate constant of production of species 2 by species 1
+
             rate_constant_2 (float): Rate constant for first-order degradation of species 2
+
             free_energy: An instance of one of the free energy classes present in :mod:`utils.free_energy`
+
             c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.
-                                      The concentration variables :math:`c_1` and :math:`c_2` must be instances of the
-                                      class :class:`fipy.CellVariable`
+
+            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class
+            :class:`fipy.CellVariable`
         """
 
         # Parameters of the dynamical equations
@@ -57,8 +63,8 @@ class TwoComponentModelBRD:
 
         Args:
             c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.
-                                      The concentration variables :math:`c_1` and :math:`c_2` must be instances of the
-                                      class :class:`fipy.CellVariable`
+            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class
+            :class:`fipy.CellVariable`
 
         Returns:
             equations (list): List that would go to 0 if the concentrations in c_vector satisfy the model equations
@@ -93,15 +99,17 @@ class TwoComponentModelBRD:
 
         Args:
             c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.
-                                      The concentration variables :math:`c_1` and :math:`c_2` must be instances of the
-                                      class :class:`fipy.CellVariable`
+            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class
+            :class:`fipy.CellVariable`
+
             dt (float): Size of time step to solve the model equations over once
             max_sweeps (int): Number of times to sweep using the function sweep() in the fipy package
 
         Returns:
             residuals (numpy.ndarray): A 2x1 numpy array containing residuals after solving the equations
+
             max_change (float): Maximum change in the concentration fields at any given position for the time interval
-                                dt
+            dt
 
         """
 

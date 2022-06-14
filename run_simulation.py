@@ -31,13 +31,17 @@ def run_simulation(input_params, concentration_vector, simulation_geometry, free
 
     Args:
         input_params (dict): Dictionary that contains input parameters. We are interested in the parameters associated
-                             with the numerical method for integration
+        with the numerical method for integration
+
         concentration_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like
-                                             :math:`[c_1, c_2, ... c_n]`. The concentration variables :math:`c_i` must
-                                             be instances of the class :class:`fipy.CellVariable` or equivalent.
+        :math:`[c_1, c_2, ... c_n]`. The concentration variables :math:`c_i` must be instances of the class
+        :class:`fipy.CellVariable` or equivalent.
+
         simulation_geometry (Geometry): Instance of class :class:`utils.geometry.Geometry` that describes the mesh
-                                        geometry
+        geometry
+
         free_en (utils.free_energy): An instance of one of the classes in mod:`utils.free_energy`
+
         equations (utils.dynamical_equations): An instance of one of the classes in mod:`utils.dynamical_equations`
         out_directory (string): The directory to output simulation data
 

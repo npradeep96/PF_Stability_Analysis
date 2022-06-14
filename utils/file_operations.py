@@ -55,6 +55,7 @@ def write_input_params(input_filename, target_filename):
 
     Args:
         input_filename (string): Name of file that contains the input parameters for simulations
+
         target_filename (string): Name of target file to write these parameters to
 
     Returns:
@@ -79,17 +80,23 @@ def write_stats(t, dt, steps, c_vector, geometry, free_energy, residuals, max_ch
 
     Args:
         t (float): Current time
+
         dt (float): Size of current time step
+
         steps (int): Number of time steps taken
+
         c_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like :math:`[c_1, c_2, ... c_n]`.
-                                  The concentration variables :math:`c_i` must be instances of the class
-                                  :class:`fipy.CellVariable` or equivalent.
+        The concentration variables :math:`c_i` must be instances of the class :class:`fipy.CellVariable` or equivalent.
+
         geometry (Geometry): An instance of class :class:`utils.geometry.Geometry` that contains mesh description
         free_energy (utils.free_energy): An instance of one of the free energy classes present in
-                                         :mod:`utils.free_energy`
+        :mod:`utils.free_energy`
+
         residuals (numpy.ndarray): An array of the same size as c_vector, that contains the residuals when solving the
-                                   dynamical equations at this current time step
+        dynamical equations at this current time step
+
         max_change (float): Maximum rate of change of concentration fields at any position
+
         target_file (string): Target file to write out the statistics
     """
 
@@ -129,13 +136,17 @@ def write_spatial_variables_to_hdf5_file(step, total_steps, c_vector, geometry, 
 
     Args:
         step (int): The step number to write out the spatial variables data
+
         total_steps (int): Total number of snapshots at which we need to store the concentration fields
+
         c_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like :math:`[c_1, c_2, ... c_n]`.
-                                  The concentration variables :math:`c_i` must be instances of the class
-                                  :class:`fipy.CellVariable` or equivalent.
+        The concentration variables :math:`c_i` must be instances of the class :class:`fipy.CellVariable` or equivalent.
+
         geometry (Geometry): An instance of class :class:`utils.geometry.Geometry` that contains mesh description
+
         free_energy (utils.free_energy): An instance of one of the free energy classes present in
-                                         :mod:`utils.free_energy`
+        :mod:`utils.free_energy`
+
         target_file (string): Target file to write out the statistics
     """
 

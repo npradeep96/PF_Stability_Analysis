@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utils.simulation_helper &mdash; Phase Field Stability Analysis v1.0 documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Phase Field Stability Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Phase Field Stability Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>utils.simulation_helper</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utils.simulation_helper</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Module that contains helper functions to run simulations that can be used by run_simulation.py</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">geometry</span>
+<span class="kn">import</span> <span class="nn">initial_conditions</span>
+<span class="kn">import</span> <span class="nn">free_energy</span>
+<span class="kn">import</span> <span class="nn">dynamical_equations</span>
+<span class="kn">import</span> <span class="nn">fipy</span> <span class="k">as</span> <span class="nn">fp</span>
+
+
+<div class="viewcode-block" id="set_mesh_geometry"><a class="viewcode-back" href="../../utils.html#utils.simulation_helper.set_mesh_geometry">[docs]</a><span class="k">def</span> <span class="nf">set_mesh_geometry</span><span class="p">(</span><span class="n">input_params</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Set the mesh geometry depending on the options in input_parameters</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs</span>
+<span class="sd">        that describe the mesh geometry</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">         simulation_geometry (Geometry): Instance of class :class:`utils.geometry.Geometry`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">simulation_geometry</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Geometry</span><span class="p">()</span>
+
+    <span class="c1"># Geometry in 2 dimensions</span>
+    <span class="k">if</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;dimension&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># Circular geometry</span>
+        <span class="k">if</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;circ_flag&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="s1">&#39;radius&#39;</span> <span class="ow">in</span> <span class="n">input_params</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;dx&#39;</span> <span class="ow">in</span> <span class="n">input_params</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> \
+                <span class="s2">&quot;input_params dictionary doesn&#39;t have values corresponding to the domain radius and mesh size&quot;</span>
+            <span class="n">simulation_geometry</span><span class="o">.</span><span class="n">circular_mesh_2d</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;radius&#39;</span><span class="p">],</span> <span class="n">cell_size</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">])</span>
+        <span class="c1"># Square geometry</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="s1">&#39;length&#39;</span> <span class="ow">in</span> <span class="n">input_params</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;dx&#39;</span> <span class="ow">in</span> <span class="n">input_params</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> \
+                <span class="s2">&quot;input_params dictionary doesn&#39;t have values corresponding to the domain length and mesh size&quot;</span>
+            <span class="n">simulation_geometry</span><span class="o">.</span><span class="n">square_mesh_2d</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">],</span> <span class="n">dx</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">])</span>
+    <span class="c1"># Geometry in 3 dimensions</span>
+    <span class="k">elif</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;dimension&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="s1">&#39;length&#39;</span> <span class="ow">in</span> <span class="n">input_params</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;dx&#39;</span> <span class="ow">in</span> <span class="n">input_params</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> \
+            <span class="s2">&quot;input_params dictionary doesn&#39;t have values corresponding to the domain length and mesh size&quot;</span>
+        <span class="n">simulation_geometry</span><span class="o">.</span><span class="n">cube_mesh_3d</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">],</span> <span class="n">dx</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">simulation_geometry</span></div>
+
+
+<div class="viewcode-block" id="initialize_concentrations"><a class="viewcode-back" href="../../utils.html#utils.simulation_helper.initialize_concentrations">[docs]</a><span class="k">def</span> <span class="nf">initialize_concentrations</span><span class="p">(</span><span class="n">input_params</span><span class="p">,</span> <span class="n">simulation_geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Set initial conditions for the concentration profiles</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs</span>
+<span class="sd">        that describe the initial conditions</span>
+
+<span class="sd">        simulation_geometry (Geometry): Instance of class :class:`utils.geometry.Geometry` that describes the mesh</span>
+<span class="sd">        geometry</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        concentration_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like</span>
+<span class="sd">        :math:`[c_1, c_2, ... c_n]`. The concentration variables :math:`c_i` must be instances of the class</span>
+<span class="sd">        :class:`fipy.CellVariable` or equivalent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Initialize concentration_vector</span>
+    <span class="n">concentration_vector</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;n_concentrations&#39;</span><span class="p">])):</span>
+        <span class="c1"># Initialize fipy.CellVariable</span>
+        <span class="n">concentration_variable</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">CellVariable</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">simulation_geometry</span><span class="o">.</span><span class="n">mesh</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;c_</span><span class="si">{index}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">i</span><span class="p">),</span>
+                                                 <span class="n">hasOld</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;initial_values&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+        <span class="c1"># Nucleate a seed of dense concentrations if necessary</span>
+        <span class="k">if</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;nucleate_seed&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">initial_conditions</span><span class="o">.</span><span class="n">nucleate_spherical_seed</span><span class="p">(</span><span class="n">concentration</span><span class="o">=</span><span class="n">concentration_variable</span><span class="p">,</span>
+                                                       <span class="n">value</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;seed_value&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                                                       <span class="n">dimension</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;dimension&#39;</span><span class="p">],</span>
+                                                       <span class="n">geometry</span><span class="o">=</span><span class="n">simulation_geometry</span><span class="p">,</span>
+                                                       <span class="n">nucleus_size</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;nucleus_size&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                                                       <span class="n">location</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+        <span class="c1"># Append the concentration variable to the</span>
+        <span class="n">concentration_vector</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">concentration_variable</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">concentration_vector</span></div>
+
+
+<div class="viewcode-block" id="set_free_energy"><a class="viewcode-back" href="../../utils.html#utils.simulation_helper.set_free_energy">[docs]</a><span class="k">def</span> <span class="nf">set_free_energy</span><span class="p">(</span><span class="n">input_params</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Set free energy of interactions</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs</span>
+<span class="sd">        that describe the free energy</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        free_en (utils.free_energy): An instance of one of the classes in mod:`utils.free_energy`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;free_energy_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">free_en</span> <span class="o">=</span> <span class="n">free_energy</span><span class="o">.</span><span class="n">TwoCompDoubleWellFHCrossQuadratic</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;alpha&#39;</span><span class="p">],</span>
+                                                                <span class="n">beta</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;beta&#39;</span><span class="p">],</span>
+                                                                <span class="n">gamma</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;gamma&#39;</span><span class="p">],</span>
+                                                                <span class="n">lamda</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;lamda&#39;</span><span class="p">],</span>
+                                                                <span class="n">kappa</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;kappa&#39;</span><span class="p">],</span>
+                                                                <span class="n">c_bar_1</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;c_bar&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">free_en</span></div>
+
+
+<div class="viewcode-block" id="set_model_equations"><a class="viewcode-back" href="../../utils.html#utils.simulation_helper.set_model_equations">[docs]</a><span class="k">def</span> <span class="nf">set_model_equations</span><span class="p">(</span><span class="n">input_params</span><span class="p">,</span> <span class="n">concentration_vector</span><span class="p">,</span> <span class="n">free_en</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Set dynamical equations for the model</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_params (dict): Dictionary that contains input parameters. We are only interested in the key,value pairs</span>
+<span class="sd">        that describe the parameters associated with the dynamical model</span>
+
+<span class="sd">        concentration_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like</span>
+<span class="sd">        :math:`[c_1, c_2, ... c_n]`. The concentration variables :math:`c_i` must be instances of the class</span>
+<span class="sd">        :class:`fipy.CellVariable` or equivalent.</span>
+
+<span class="sd">        free_en (utils.free_energy): An instance of one of the classes in mod:`utils.free_energy`</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        equations (utils.dynamical_equations): An instance of one of the classes in mod:`utils.dynamical_equations`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;dynamical_model_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">equations</span> <span class="o">=</span> <span class="n">dynamical_equations</span><span class="o">.</span><span class="n">TwoComponentModelBRD</span><span class="p">(</span><span class="n">mobility_1</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;M1&#39;</span><span class="p">],</span>
+                                                             <span class="n">mobility_2</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;M2&#39;</span><span class="p">],</span>
+                                                             <span class="n">rate_constant_1</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;k_production&#39;</span><span class="p">],</span>
+                                                             <span class="n">rate_constant_2</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;k_degradation&#39;</span><span class="p">],</span>
+                                                             <span class="n">free_energy</span><span class="o">=</span><span class="n">free_en</span><span class="p">,</span>
+                                                             <span class="n">c_vector</span><span class="o">=</span><span class="n">concentration_vector</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">equations</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Pradeep Natarajan.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
