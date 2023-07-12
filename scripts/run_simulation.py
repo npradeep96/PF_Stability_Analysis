@@ -1,6 +1,8 @@
 """Main script to assemble and run phase field simulations
 """
 
+import sys
+sys.path.append('../')
 import argparse
 import utils.file_operations as file_operations
 import utils.simulation_helper as simulation_helper
@@ -22,9 +24,10 @@ def get_output_dir_name(input_params):
 
     output_dir = 'M_1_' + str(input_params['M1']) + '_beta_' + str(input_params['beta']) \
                  + '_gamma_' + str(input_params['gamma']) + '_kappa_' + str(input_params['kappa']) \
+                 + '_K_' + str(input_params['k_production']) \
                  + '_c_initial_' + str(input_params['initial_values'][0]) + '_noise_variance_' \
                  + str(input_params['initial_condition_noise_variance'][0])
-                 # + '_K_' + str(input_params['k_production']) + '_well_depth_' + str(input_params['well_depth'])
+    # + '_well_depth_' + str(input_params['well_depth'])
     # + '_reaction_sigma_' + str(input_params['reaction_sigma'])
     return output_dir
 
@@ -181,8 +184,8 @@ if __name__ == "__main__":
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     # Write the input parameters file to the output directory
-    file_operations.write_input_params(input_filename=input_parameter_file,
-                                       target_filename=os.path.join(output_directory, 'input_params.txt'))
+    file_operations.write_input_params_from_file(input_filename=input_parameter_file,
+                                                 target_filename=os.path.join(output_directory, 'input_params.txt'))
     print('Successfully created the output directory to write simulation data ...')
 
     # Run simulation

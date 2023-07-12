@@ -1,0 +1,3 @@
+k_production, [0.5]
+initial_values, [[-1.5, 0.0]]
+gamma, [1.0]

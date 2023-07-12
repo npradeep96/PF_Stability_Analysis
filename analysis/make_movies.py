@@ -17,6 +17,9 @@ from matplotlib import rc
 # Suppress any outputs to an interactive interface
 matplotlib.use('Agg')
 
+# Add current directory to system path
+
+
 # Settings to make pretty plots using pyplot
 rc('font', **{'family': 'serif', 'serif': ['Times']})
 rc('text', usetex=True)
@@ -59,9 +62,12 @@ def write_movies_two_component_2d(path, hdf5_file, movie_parameters, mesh, fps=5
 
             # Check if we have reached the end of the movie
             flag = False
+            zero_component_counter = 0
             for i in range(int(movie_parameters['num_components'])):
                 if np.all(concentration_profile[i][t] == 0):
-                    flag = True
+                    zero_component_counter = zero_component_counter + 1
+            if zero_component_counter == int(movie_parameters['num_components']):
+                flag = True
             if flag:
                 break
 
@@ -71,10 +77,12 @@ def write_movies_two_component_2d(path, hdf5_file, movie_parameters, mesh, fps=5
                 cs = ax[i].tricontourf(mesh.x, mesh.y, concentration_profile[i][t],
                                        levels=np.linspace(plotting_range[i][0], plotting_range[i][1], 256),
                                        cmap=movie_parameters['color_map'][i])
-                ax[i].tick_params(axis='both', which='major', labelsize=20)
-                cbar = fig.colorbar(cs, ax=ax[i], ticks=np.linspace(plotting_range[i][0], plotting_range[i][1], 256))
-                cbar.ax.tick_params(labelsize=20)
-                ax[i].set_title(movie_parameters['titles'], fontsize=20)
+                # ax[i].tick_params(axis='both', which='major', labelsize=20)
+                ax[i].xaxis.set_tick_params(labelbottom=False)
+                ax[i].yaxis.set_tick_params(labelleft=False)
+                cbar = fig.colorbar(cs, ax=ax[i], ticks=np.linspace(plotting_range[i][0], plotting_range[i][1], 3))
+                cbar.ax.tick_params(labelsize=30)
+                ax[i].set_title(movie_parameters['titles'][i], fontsize=40)
             fig.savefig(fname=movies_directory + '/Movie_step_{step}.png'.format(step=t), dpi=300, format='png')
             plt.close(fig)
 
@@ -85,7 +93,9 @@ def write_movies_two_component_2d(path, hdf5_file, movie_parameters, mesh, fps=5
 
     file_names = sorted(list((file_name for file_name in os.listdir(movies_directory) if file_name.endswith('.png'))),
                         key=key_funct)
+    # print(file_names)
     file_paths = [os.path.join(movies_directory, f) for f in file_names]
+    # print(file_paths)
     clip = mp.ImageSequenceClip(file_paths, fps=fps)
     clip.write_videofile(os.path.join(path, 'movies', 'Movie.mp4'), fps=fps)
     clip.close()

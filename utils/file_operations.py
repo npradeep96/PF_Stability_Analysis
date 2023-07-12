@@ -50,16 +50,28 @@ def input_parse(filename):
     return input_parameters
 
 
-def write_input_params(input_filename, target_filename):
-    """Write input parameters to a target file
+def write_input_params_from_dict(input_parameters, target_filename):
+    """Write input parameters to a target file from a dictionary storing input parameter values
 
     Args:
-        input_filename (string): Name of file that contains the input parameters for simulations
+        input_parameters (dict): A dictionary that contains (key,value) pairs of (parameter name, parameter value)
 
         target_filename (string): Name of target file to write these parameters to
+    """
 
-    Returns:
-        input_parameters (dict): A dictionary that contains (key,value) pairs of (parameter name, parameter value)
+    with open(target_filename, 'w') as f:
+        for key, value in input_parameters.items():
+            line = str(key) + ', ' + str(value) + '\n'
+            f.write(line)
+
+
+def write_input_params_from_file(input_filename, target_filename):
+    """Write input parameters to a target file from a source file
+
+    Args:
+        input_filename (string): Name of source file that contains the input parameters for simulations
+
+        target_filename (string): Name of target file to write these parameters to
     """
 
     # Check if input parameter file exists

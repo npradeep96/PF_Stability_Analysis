@@ -21,6 +21,28 @@ def initialize_uniform_profile(c_vector, values):
             c_vector[i].value = values[i]
 
 
+def add_noise_to_initial_conditions(c_vector, sigmas, random_seed):
+    """Function that initializes a spatially uniform value for concentration variables in c_vector
+
+    Args:
+        c_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like :math:`[c_1, c_2, ... c_n]`.
+        The concentration variables :math:`c_i` must be instances of the class :class:`fipy.CellVariable` or equivalent.
+
+        sigmas (numpy.ndarray): An nx1 vector of values that captures the variance of the noise term added to the
+        initial condition.
+
+        random_seed (int): An integer to seed the random number generator to add noise
+    """
+
+    # Seed random number generator
+    np.random.seed(random_seed)
+
+    for i in range(len(c_vector)):
+        if type(c_vector[i]) == fp.variables.cellVariable.CellVariable:
+            number_of_mesh_elements = np.size(c_vector[i].value)
+            c_vector[i].value += sigmas[i] * np.random.randn(number_of_mesh_elements)
+
+
 def nucleate_spherical_seed(concentration, value, dimension, geometry, nucleus_size, location):
     """Function that nucleates a circular or spherical region of high concentration
 
@@ -68,5 +90,3 @@ def nucleate_spherical_seed(concentration, value, dimension, geometry, nucleus_s
     else:
         print("Dimensions greater than 3 are not supported by the function nucleate_spherical_seed()")
         exit()
-
-
