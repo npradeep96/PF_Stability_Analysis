@@ -6,7 +6,7 @@ import numpy as np
 import reaction_rates as rates
 
 
-class TwoComponentModel:
+class TwoComponentModel(object):
     """Two component system, with Model B for species 1 and Model AB or reaction-diffusion with reactions for species 2
 
     This class describes the spatiotemporal dynamics of concentration fields two component system given by the below
@@ -30,7 +30,7 @@ class TwoComponentModel:
     with a rate constant :math:`k_2`
     """
 
-    def __init__(self, mobility_1, mobility_2, modelAB_dynamics_type, degradation_constant, free_energy, c_vector):
+    def __init__(self, mobility_1, mobility_2, modelAB_dynamics_type, degradation_constant, free_energy):
         """Initialize an object of :class:`TwoComponentModelBModelAB`.
 
         Args:
@@ -59,7 +59,9 @@ class TwoComponentModel:
         self._production_term = None
         self._degradation_term = rates.FirstOrderReaction(k=degradation_constant)
         # Define model equations
-        self._equations = None # self._model_equations(c_vector)
+        self._equations = None
+        # The fipy solver used to solve the model equations
+        self._solver = None
 
     def set_production_term(self, reaction_type, **kwargs):
         """ Sets the nature of the production term of species :math:`c_2` from :math:`c_1`
@@ -104,10 +106,10 @@ class TwoComponentModel:
         # gradients of the concentration fields in the Model B dynamics.
         assert hasattr(self._free_energy, 'calculate_jacobian'), \
             "self._free_energy instance does not have a function calculate_jacobian()"
-        assert hasattr(self._free_energy, '_kappa'), \
+        assert hasattr(self._free_energy, '_kappa') or hasattr(self._free_energy, '_kappa_tilde'), \
             "self._free_energy instance does not have an attribute kappa describing the surface energy"
-        jacobian = self._free_energy.calculate_jacobian(c_vector)
 
+        jacobian = self._free_energy.calculate_jacobian(c_vector)
         # Model B dynamics for species 1
         eqn_1 = (fp.TransientTerm(coeff=1.0, var=c_vector[0])
                  == fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 0], var=c_vector[0])
@@ -115,6 +117,27 @@ class TwoComponentModel:
                  - fp.DiffusionTerm(coeff=(self._M1, self._free_energy.kappa), var=c_vector[0])
                  - self._M1 * (self._free_energy.get_gaussian_function(c_vector[0].mesh)).faceGrad.divergence
                  )
+        # mu_1_bulk = self._free_energy.calculate_mu_1_bulk(c_vector=c_vector)
+        # self._psi = fp.CellVariable(mesh=c_vector[0].mesh, value=mu_1_bulk.value, hasOld=True)
+        #
+        # eqn_c1 = (fp.TransientTerm(coeff=1.0, var=c_vector[0]) == fp.DiffusionTerm(coeff=self._M1, var=self._psi))
+        # eqn_psi = (fp.ImplicitSourceTerm(coeff=1.0, var=self._psi)
+        #            == mu_1_bulk
+        #            + fp.ImplicitSourceTerm(coeff=jacobian[0, 0], var=c_vector[0]) - jacobian[0, 0] * c_vector[0]
+        #            + jacobian[0, 1] * (c_vector[1] - c_vector[1].old)
+        #            - fp.DiffusionTerm(coeff=self._free_energy.kappa, var=c_vector[0])
+        #            )
+        # eqn_1 = eqn_c1 & eqn_psi
+        # eqn_1 = (fp.TransientTerm(coeff=1.0, var=c_vector[0])
+        #          == self._M1 * mu_1_bulk.faceGrad.divergence
+        #          + self._M1 * fp.ExponentialConvectionTerm(coeff=jacobian[0, 0].grad, var=c_vector[0])
+        #          + self._M1 * fp.DiffusionTerm(coeff=jacobian[0, 0], var=c_vector[0])
+        #          - 2.0 * self._M1 * jacobian[0, 0].grad.dot(c_vector[0].old.grad)
+        #          - self._M1 * jacobian[0, 0] * c_vector[0].old.faceGrad.divergence
+        #          - self._M1 * jacobian[0, 0].faceGrad.divergence * c_vector[0].old
+        #          - fp.DiffusionTerm(coeff=(self._M1, self._free_energy.kappa), var=c_vector[0])
+        #          )
+
         # Model AB dynamics or reaction-diffusion dynamics for species 2 with production and degradation reactions
         if self._modelAB_dynamics_type == 1:
             # Model AB dynamics for species 2
@@ -128,13 +151,17 @@ class TwoComponentModel:
             # Reaction-diffusion dynamics for species 2
             eqn_2 = (fp.TransientTerm(coeff=1.0, var=c_vector[1])
                      == fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 1], var=c_vector[1])
-                     + self._production_term.rate(c_vector[0])
+                     + self._production_term.rate(c_vector[0].old)
                      - self._degradation_term.rate(c_vector[1])
                      )
 
+        # self._equations = eqn_1 & eqn_2 & eqn_3
         self._equations = [eqn_1, eqn_2]
 
-    def step_once(self, c_vector, dt, max_sweeps):
+        # Define the relative tolerance of the fipy solver
+        self._solver = fp.DefaultSolver(tolerance=1e-10)
+
+    def step_once(self, c_vector, dt, max_residual):
         """Function that solves the model equations over a time step of dt to get the concentration profiles.
 
         Args:
@@ -143,6 +170,47 @@ class TwoComponentModel:
             :class:`fipy.CellVariable`
 
             dt (float): Size of time step to solve the model equations over once
+
+            max_residual (float): Maximum value of the residual acceptable when sweeping the equations
+
+        Returns:
+            residuals (numpy.ndarray): A 2x1 numpy array containing residuals after solving the equations
+
+            max_change (float): Maximum change in the concentration fields at any given position for the time interval
+            dt
+
+        """
+
+        # Solve the model equations for a time step of dt by sweeping till convergence
+        residuals = 1e6
+        # eqn = self._equations[0] & self._equations[1]
+        # eqn.solve(dt=dt)
+        # self._equations[1].solve(dt=dt)
+        # self._equations[0].solve(dt=dt)
+        # self._equations.solve(dt=dt)
+
+        while np.max(residuals) > max_residual:
+            residual_2 = self._equations[1].sweep(var=c_vector[1], dt=dt)
+            residual_1 = self._equations[0].sweep(var=c_vector[0], dt=dt)
+            residuals = np.array([residual_1, residual_2])
+            # residuals = self._equations.sweep(dt=dt)
+
+        max_change_c_1 = np.max(np.abs((c_vector[0] - c_vector[0].old).value))
+        max_change_c_2 = np.max(np.abs((c_vector[1] - c_vector[1].old).value))
+        max_change = np.max([max_change_c_1, max_change_c_2])
+
+        return residuals, max_change
+
+    def step_once_old(self, c_vector, dt, max_sweeps):
+        """Function that solves the model equations over a time step of dt to get the concentration profiles.
+
+        Args:
+            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.
+            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class
+            :class:`fipy.CellVariable`
+
+            dt (float): Size of time step to solve the model equations over once
+
             max_sweeps (int): Number of times to sweep using the function sweep() in the fipy package
 
         Returns:
@@ -154,17 +222,29 @@ class TwoComponentModel:
         """
 
         # Solve the model equations for a time step of dt by sweeping max_sweeps times
-        sweeps = 0
         residual_1 = 1e6
         residual_2 = 1e6
-        while sweeps < max_sweeps:
-            residual_1 = self._equations[0].sweep(dt=dt)
-            residual_2 = self._equations[1].sweep(dt=dt)
-            sweeps += 1
-        residuals = np.array([residual_1, residual_2])
+        residual_3 = 1e6
+
+        # Strang Splitting
+        for i in range(max_sweeps):
+            residual_1 = self._equations[0].sweep(dt=0.5*dt, solver=self._solver)
+        c_vector[0].updateOld()
+        for i in range(max_sweeps):
+            residual_2 = self._equations[1].sweep(dt=dt, solver=self._solver)
+        c_vector[1].updateOld()
+        for i in range(max_sweeps):
+            residual_3 = self._equations[0].sweep(dt=0.5*dt, solver=self._solver)
+
+        residuals = np.array([residual_1, residual_2, residual_3])
 
         max_change_c_1 = np.max(np.abs((c_vector[0] - c_vector[0].old).value))
         max_change_c_2 = np.max(np.abs((c_vector[1] - c_vector[1].old).value))
         max_change = np.max([max_change_c_1, max_change_c_2])
 
         return residuals, max_change
+
+    def update_old(self, c_vector):
+        for i in range(len(c_vector)):
+            c_vector[i].updateOld()
+        # self._psi.updateOld()

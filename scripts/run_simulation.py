@@ -22,8 +22,8 @@ def get_output_dir_name(input_params):
         output_dir (string): Name of the output directory including the important parameter names
     """
 
-    output_dir = 'M_1_' + str(input_params['M1']) + '_beta_' + str(input_params['beta']) \
-                 + '_gamma_' + str(input_params['gamma']) + '_kappa_' + str(input_params['kappa']) \
+    output_dir = 'M_1_' + str(input_params['M1']) + '_beta_' + str(input_params['beta_tilde']) \
+                 + '_gamma_' + str(input_params['gamma_tilde']) + '_kappa_' + str(input_params['kappa_tilde']) \
                  + '_K_' + str(input_params['k_production']) \
                  + '_c_initial_' + str(input_params['initial_values'][0]) + '_noise_variance_' \
                  + str(input_params['initial_condition_noise_variance'][0])
@@ -67,6 +67,7 @@ def run_simulation(input_params, concentration_vector, simulation_geometry, free
     duration = int(input_params['duration'])
     total_steps = int(input_params['total_steps'])
     max_sweeps = int(input_params['max_sweeps'])
+    max_residual = float(input_params['max_residual'])
     data_log_frequency = int(input_params['data_log'])
     pbar = tqdm(total=total_steps)
 
@@ -105,38 +106,69 @@ def run_simulation(input_params, concentration_vector, simulation_geometry, free
                     time_profile_flag = 0
 
         # Update the old values of concentrations
-        for i in range(len(concentration_vector)):
-            concentration_vector[i].updateOld()
+        equations.update_old(concentration_vector)
 
         # Step over a time step dt and solve the equations
-        residuals, max_change = equations.step_once(c_vector=concentration_vector, dt=dt, max_sweeps=max_sweeps)
+        # residuals, max_change = equations.step_once(c_vector=concentration_vector, dt=dt, max_residual=max_residual)
+        residuals, max_change = equations.step_once_old(c_vector=concentration_vector, dt=dt, max_sweeps=max_sweeps)
 
-        # Ensure that the concentration variables are not changing too rapidly in the time step dt
+        # Write simulation output to files
+        if step % data_log_frequency == 0:
+            file_operations.write_stats(t=t, dt=dt, steps=step, c_vector=concentration_vector,
+                                        geometry=simulation_geometry, free_energy=free_en,
+                                        residuals=np.max(residuals), max_change=np.max(max_change),
+                                        target_file=os.path.join(out_directory, 'stats.txt'))
+            file_operations.write_spatial_variables_to_hdf5_file(step=int(step / data_log_frequency),
+                                                                 total_steps=int(total_steps / data_log_frequency) + 1,
+                                                                 c_vector=concentration_vector,
+                                                                 geometry=simulation_geometry,
+                                                                 free_energy=free_en,
+                                                                 target_file=os.path.join(out_directory,
+                                                                                          'spatial_variables.hdf5'))
+        # Update all the variables that keep track of time
+        step += 1
+        elapsed += dt
+        t += dt
+        pbar.update(n=1)
+        # for i in range(len(concentration_vector)):
+        #     concentration_vector[i].updateOld()
+
         if max_change > max_change_allowed:
             dt *= 0.8
-            continue
         else:
-            # Write simulation output to files
-            if step % data_log_frequency == 0:
-                file_operations.write_stats(t=t, dt=dt, steps=step, c_vector=concentration_vector,
-                                            geometry=simulation_geometry, free_energy=free_en,
-                                            residuals=np.max(residuals), max_change=np.max(max_change),
-                                            target_file=os.path.join(out_directory, 'stats.txt'))
-                file_operations.write_spatial_variables_to_hdf5_file(step=int(step/data_log_frequency),
-                                                                     total_steps=int(total_steps/data_log_frequency)+1,
-                                                                     c_vector=concentration_vector,
-                                                                     geometry=simulation_geometry,
-                                                                     free_energy=free_en,
-                                                                     target_file=os.path.join(out_directory,
-                                                                                              'spatial_variables.hdf5'))
-            # Update all the variables that keep track of time
-            step += 1
-            elapsed += dt
-            t += dt
             # Increase the size of the time step since there are no large errors
             dt *= 1.1
             dt = min(dt, dt_max)
-            pbar.update(n=1)
+
+        # Ensure that the concentration variables are not changing too rapidly in the time step dt
+        # if max_change > max_change_allowed:
+        #     dt *= 0.8
+        #     continue
+        # else:
+        #     # Write simulation output to files
+        #     if step % data_log_frequency == 0:
+        #         file_operations.write_stats(t=t, dt=dt, steps=step, c_vector=concentration_vector,
+        #                                     geometry=simulation_geometry, free_energy=free_en,
+        #                                     residuals=np.max(residuals), max_change=np.max(max_change),
+        #                                     target_file=os.path.join(out_directory, 'stats.txt'))
+        #         file_operations.write_spatial_variables_to_hdf5_file(step=int(step/data_log_frequency),
+        #                                                              total_steps=int(total_steps/data_log_frequency)+1,
+        #                                                              c_vector=concentration_vector,
+        #                                                              geometry=simulation_geometry,
+        #                                                              free_energy=free_en,
+        #                                                              target_file=os.path.join(out_directory,
+        #                                                                                       'spatial_variables.hdf5'))
+        #     # Update all the variables that keep track of time
+        #     step += 1
+        #     elapsed += dt
+        #     t += dt
+        #     # Update the old values of concentrations
+        #     for i in range(len(concentration_vector)):
+        #         concentration_vector[i].updateOld()
+        #     # Increase the size of the time step since there are no large errors
+        #     dt *= 1.1
+        #     dt = min(dt, dt_max)
+        #     pbar.update(n=1)
 
     if dt <= dt_min:
         err_flag = 1

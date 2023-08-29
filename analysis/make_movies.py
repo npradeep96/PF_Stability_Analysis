@@ -29,7 +29,7 @@ plt.rcParams['font.size'] = 20
 plt.rcParams["text.usetex"] = True
 
 
-def write_movies_two_component_2d(path, hdf5_file, movie_parameters, mesh, fps=5):
+def write_movies_two_component_2d(path, hdf5_file, movie_parameters, mesh, fps=3):
     """Function that writes out movies of concentration profiles for 2 component simulations in 2D
 
     Args:
@@ -50,12 +50,26 @@ def write_movies_two_component_2d(path, hdf5_file, movie_parameters, mesh, fps=5
         print(movies_directory + " directory already exists")
 
     with h5py.File(os.path.join(path, hdf5_file), mode="r") as concentration_dynamics:
-        # Read plotting range for the concentrations and the concentration profile data from files
-        plotting_range = []
+        # Read concentration profile data from files
         concentration_profile = []
         for i in range(int(movie_parameters['num_components'])):
-            plotting_range.append(movie_parameters['c{index}_range'.format(index=i)])
             concentration_profile.append(concentration_dynamics['c_{index}'.format(index=i)])
+
+        # Get upper and lower limits of the concentration values from the concentration profile data
+        plotting_range = []
+        for i in range(int(movie_parameters['num_components'])):
+            # check if plotting range is explicitly specified in movie_parameters
+            if 'c{index}_range'.format(index=i) in movie_parameters.keys():
+                plotting_range.append(movie_parameters['c{index}_range'.format(index=i)])
+            else:
+                min_value = np.min(concentration_profile[i][0])
+                max_value = np.max(concentration_profile[i][0])
+                for t in range(1, concentration_profile[0].shape[0]):
+                    if min_value > np.min(concentration_profile[i][t]):
+                        min_value = np.min(concentration_profile[i][t])
+                    if max_value < np.max(concentration_profile[i][t]):
+                        max_value = np.max(concentration_profile[i][t])
+                plotting_range.append([min_value, max_value])
 
         for t in range(concentration_profile[0].shape[0]):
             # Plot and save plots at each time point before stitching them together into a movie
@@ -75,12 +89,16 @@ def write_movies_two_component_2d(path, hdf5_file, movie_parameters, mesh, fps=5
             fig, ax = plt.subplots(1, int(movie_parameters['num_components']), figsize=movie_parameters['figure_size'])
             for i in range(int(movie_parameters['num_components'])):
                 cs = ax[i].tricontourf(mesh.x, mesh.y, concentration_profile[i][t],
-                                       levels=np.linspace(plotting_range[i][0], plotting_range[i][1], 256),
+                                       levels=np.linspace(int(plotting_range[i][0]*100)*0.01,
+                                                          int(plotting_range[i][1]*100)*0.01,
+                                                          256),
                                        cmap=movie_parameters['color_map'][i])
                 # ax[i].tick_params(axis='both', which='major', labelsize=20)
                 ax[i].xaxis.set_tick_params(labelbottom=False)
                 ax[i].yaxis.set_tick_params(labelleft=False)
-                cbar = fig.colorbar(cs, ax=ax[i], ticks=np.linspace(plotting_range[i][0], plotting_range[i][1], 3))
+                cbar = fig.colorbar(cs, ax=ax[i], ticks=np.linspace(int(plotting_range[i][0]*100)*0.01,
+                                                                    int(plotting_range[i][1]*100)*0.01,
+                                                                    3))
                 cbar.ax.tick_params(labelsize=30)
                 ax[i].set_title(movie_parameters['titles'][i], fontsize=40)
             fig.savefig(fname=movies_directory + '/Movie_step_{step}.png'.format(step=t), dpi=300, format='png')

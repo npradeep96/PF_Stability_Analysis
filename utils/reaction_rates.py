@@ -2,9 +2,10 @@
 """
 
 import numpy as np
+import fipy as fp
 
 
-class FirstOrderReaction:
+class FirstOrderReaction(object):
     """Rate law for a simple first order reaction with constant rate coefficient
 
     .. math::
@@ -26,13 +27,13 @@ class FirstOrderReaction:
             concentration (fipy.CellVariable): Concentration variable
 
         Returns:
-             reaction_rate (fipy.CellVariable): Reaction rate
+             reaction_rate (fipy.ImplicitSourceTerm): Reaction rate
         """
+        # return self._k * concentration
+        return fp.ImplicitSourceTerm(coeff=self._k, var=concentration)
 
-        return self._k * concentration
 
-
-class LocalizedFirstOrderReaction:
+class LocalizedFirstOrderReaction(object):
     """Rate law for a first order reaction with spatially localized rate constant.
 
     The rate constant is a Gaussian function centered around the specified position with a specified width.
@@ -64,7 +65,7 @@ class LocalizedFirstOrderReaction:
             concentration (fipy.CellVariable): Concentration variable
 
         Returns:
-             reaction_rate (fipy.CellVariable): Reaction rate
+             reaction_rate (fipy.ImplicitSourceTerm): Reaction rate
         """
-
-        return self._rate_constant * concentration
+        # return self._rate_constant * concentration
+        return fp.ImplicitSourceTerm(coeff=self._rate_constant, var=concentration)

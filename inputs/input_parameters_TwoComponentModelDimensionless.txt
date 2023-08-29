@@ -1,0 +1,50 @@
+# Parameters associated with the free energy
+free_energy_type, 2
+c_bar_1, 4.0
+beta_tilde, -0.3
+gamma_tilde, 0.1
+kappa_tilde, 0.01
+lamda_tilde, 1.0
+well_depth, 0.0
+well_center, [0.0, 0.0]
+sigma, 5.0
+
+# Kinetic parameters
+modelAB_dynamics_type, 1
+reaction_type, 1
+M1, 10.0
+M2, 1.0
+k_production, 10.0
+k_degradation, 1.0
+
+# Concentration variables
+n_concentrations, 2
+initial_values, [4.0, 0.0]
+initial_condition_noise_variance, [0.5, 0.0]
+random_seed, 42
+
+# Nucleate a seed for concentrations
+nucleate_seed, [0, 0]
+seed_value, [0.0, 0.0]
+nucleus_size, [0.0, 0.0]
+location, [[0,0], [0,0]]
+
+# Geometry
+dimension, 2
+circ_flag, 1
+radius, 10
+dx, 0.2
+
+# Numerical integration
+dt, 1e-3
+dt_max, 0.1
+dt_min, 1e-8
+max_change_allowed, 0.05
+duration, 800
+total_steps, 8000
+max_sweeps, 2
+max_residual, 0.1
+data_log, 200
+
+# Implement time profile of parameters
+time_profile, []

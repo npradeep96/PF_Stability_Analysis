@@ -2,7 +2,7 @@
 num_components, 2
 color_map, ["Blues", "Reds"]
 titles, ["Protein", "RNA"]
-c0_range, [-2.5, 2.5]
-c1_range, [-2.5, 2.5]
+# c0_range, [-0.5, 2.5]
+# c1_range, [-0.5, 2.5]
 figure_size, [15, 6]
 

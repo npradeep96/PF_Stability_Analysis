@@ -97,6 +97,8 @@ def set_free_energy(input_params):
         free_en (utils.free_energy): An instance of one of the classes in mod:`utils.free_energy`
     """
 
+    free_en = None
+
     if input_params['free_energy_type'] == 1:
         free_en = free_energy.TwoCompDoubleWellFHCrossQuadratic(alpha=input_params['alpha'],
                                                                 beta=input_params['beta'],
@@ -107,7 +109,16 @@ def set_free_energy(input_params):
                                                                 well_depth=input_params['well_depth'],
                                                                 well_center=input_params['well_center'],
                                                                 sigma=input_params['sigma'])
-        return free_en
+    elif input_params['free_energy_type'] == 2:
+        free_en = free_energy.TwoCompDoubleWellFHCrossQuadraticDimensionless(c_bar_1=input_params['c_bar_1'],
+                                                                             beta_tilde=input_params['beta_tilde'],
+                                                                             gamma_tilde=input_params['gamma_tilde'],
+                                                                             lamda_tilde=input_params['lamda_tilde'],
+                                                                             kappa_tilde=input_params['kappa_tilde'],
+                                                                             well_depth=input_params['well_depth'],
+                                                                             well_center=input_params['well_center'],
+                                                                             sigma=input_params['sigma'])
+    return free_en
 
 
 def set_model_equations(input_params, concentration_vector, free_en, simulation_geometry):
@@ -135,8 +146,7 @@ def set_model_equations(input_params, concentration_vector, free_en, simulation_
                                                       mobility_2=input_params['M2'],
                                                       modelAB_dynamics_type=input_params['modelAB_dynamics_type'],
                                                       degradation_constant=input_params['k_degradation'],
-                                                      free_energy=free_en,
-                                                      c_vector=concentration_vector)
+                                                      free_energy=free_en)
 
     if input_params['reaction_type'] == 1:
         equations.set_production_term(reaction_type=input_params['reaction_type'],

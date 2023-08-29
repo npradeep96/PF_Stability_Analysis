@@ -6,7 +6,7 @@ from fipy import Gmsh2D
 import numpy as np
 
 
-class Geometry:
+class Geometry(object):
     """Class that describes a mesh geometry and some associated operations with the mesh grid points.
 
     This is a base class for the different kinds of mesh geometries used in the simulations.

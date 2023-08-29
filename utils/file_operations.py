@@ -104,8 +104,7 @@ def write_stats(t, dt, steps, c_vector, geometry, free_energy, residuals, max_ch
         free_energy (utils.free_energy): An instance of one of the free energy classes present in
         :mod:`utils.free_energy`
 
-        residuals (numpy.ndarray): An array of the same size as c_vector, that contains the residuals when solving the
-        dynamical equations at this current time step
+        residuals (float): Largest value of residual when solving the dynamical equations at this current time step
 
         max_change (float): Maximum rate of change of concentration fields at any position
 
