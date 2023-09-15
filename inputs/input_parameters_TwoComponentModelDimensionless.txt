@@ -1,7 +1,7 @@
 # Parameters associated with the free energy
 free_energy_type, 2
 c_bar_1, 4.0
-beta_tilde, -0.3
+beta_tilde, -0.25
 gamma_tilde, 0.1
 kappa_tilde, 0.01
 lamda_tilde, 1.0
@@ -11,11 +11,14 @@ sigma, 5.0
 
 # Kinetic parameters
 modelAB_dynamics_type, 1
-reaction_type, 1
+reaction_type, 2
 M1, 10.0
 M2, 1.0
-k_production, 10.0
+basal_k_production, 10.0
+k_production, 2.0
 k_degradation, 1.0
+reaction_sigma, 1.5
+reaction_center, [0.0, 0.0]
 
 # Concentration variables
 n_concentrations, 2
@@ -33,18 +36,18 @@ location, [[0,0], [0,0]]
 dimension, 2
 circ_flag, 1
 radius, 10
-dx, 0.2
+dx, 0.1
 
 # Numerical integration
-dt, 1e-3
+dt, 1e-6
 dt_max, 0.1
 dt_min, 1e-8
 max_change_allowed, 0.05
-duration, 800
-total_steps, 8000
-max_sweeps, 2
+duration, 200
+total_steps, 2000
+max_sweeps, 5
 max_residual, 0.1
-data_log, 200
+data_log, 50
 
 # Implement time profile of parameters
 time_profile, []

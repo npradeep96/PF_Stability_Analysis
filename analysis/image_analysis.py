@@ -217,7 +217,7 @@ def find_local_maxima_indices(data):
         data (numpy.ndarray): Input time series data as a 1D NumPy array.
 
     Returns:
-        list: List of indices corresponding to local maxima.
+        local_maxima_indices (list): List of indices corresponding to local maxima.
     """
     # Initialize the list to store the indices of local maxima
     local_maxima_indices = []
@@ -228,6 +228,28 @@ def find_local_maxima_indices(data):
             local_maxima_indices.append(i)
 
     return local_maxima_indices
+
+
+def find_local_minima_indices(data):
+    """
+    Find the indices of local minima of the radial distribution function to which can be supplied to the distance vector
+    to identify the radius of the droplet.
+
+    Parameters:
+        data (numpy.ndarray): Input time series data as a 1D NumPy array.
+
+    Returns:
+        local_minima_indices (list): List of indices corresponding to local maxima.
+    """
+    # Initialize the list to store the indices of local maxima
+    local_minima_indices = []
+
+    # Loop through the data points to find local maxima
+    for i in range(1, len(data) - 1):
+        if data[i] < data[i - 1] and data[i] < data[i + 1]:
+            local_minima_indices.append(i)
+
+    return local_minima_indices
 
 
 def calculate_autocorrelation(image, window_size, overlap_fraction):

@@ -81,11 +81,13 @@ class TwoComponentModel(object):
             self._production_term = rates.FirstOrderReaction(k=rate_constant)
         elif reaction_type == 2:
             # Reaction rate constant is Gaussian in space
+            basal_rate_constant = kwargs.get('basal_rate_constant', None)
             rate_constant = kwargs.get('rate_constant', None)
             sigma = kwargs.get('sigma', None)
             center_point = kwargs.get('center_point', None)
             geometry = kwargs.get('geometry', None)
-            self._production_term = rates.LocalizedFirstOrderReaction(k=rate_constant, sigma=sigma, x0=center_point,
+            self._production_term = rates.LocalizedFirstOrderReaction(k0=basal_rate_constant, k=rate_constant,
+                                                                      sigma=sigma, x0=center_point,
                                                                       simulation_geometry=geometry)
 
     def set_model_equations(self, c_vector):
@@ -111,6 +113,13 @@ class TwoComponentModel(object):
 
         jacobian = self._free_energy.calculate_jacobian(c_vector)
         # Model B dynamics for species 1
+        # eqn_1 = (fp.TransientTerm(var=c_vector[0])
+        #          == fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 0], var=c_vector[0])
+        #          + fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 1], var=c_vector[1])
+        #          )
+        # eqn_3 = (fp.TransientTerm(var=c_vector[0])
+        #          == fp.DiffusionTerm(coeff=(-self._M1, self._free_energy.kappa), var=c_vector[0])
+        #          )
         eqn_1 = (fp.TransientTerm(coeff=1.0, var=c_vector[0])
                  == fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 0], var=c_vector[0])
                  + fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 1], var=c_vector[1])
@@ -141,7 +150,7 @@ class TwoComponentModel(object):
         # Model AB dynamics or reaction-diffusion dynamics for species 2 with production and degradation reactions
         if self._modelAB_dynamics_type == 1:
             # Model AB dynamics for species 2
-            eqn_2 = (fp.TransientTerm(coeff=1.0, var=c_vector[1])
+            eqn_2 = (fp.TransientTerm(var=c_vector[1])
                      == fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 0], var=c_vector[0])
                      + fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 1], var=c_vector[1])
                      + self._production_term.rate(c_vector[0])
@@ -149,9 +158,9 @@ class TwoComponentModel(object):
                      )
         elif self._modelAB_dynamics_type == 2:
             # Reaction-diffusion dynamics for species 2
-            eqn_2 = (fp.TransientTerm(coeff=1.0, var=c_vector[1])
+            eqn_2 = (fp.TransientTerm(var=c_vector[1])
                      == fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 1], var=c_vector[1])
-                     + self._production_term.rate(c_vector[0].old)
+                     + self._production_term.rate(c_vector[0])
                      - self._degradation_term.rate(c_vector[1])
                      )
 
@@ -159,9 +168,9 @@ class TwoComponentModel(object):
         self._equations = [eqn_1, eqn_2]
 
         # Define the relative tolerance of the fipy solver
-        self._solver = fp.DefaultSolver(tolerance=1e-10)
+        self._solver = fp.DefaultSolver(tolerance=1e-10, iterations=2000)
 
-    def step_once(self, c_vector, dt, max_residual):
+    def step_once(self, c_vector, dt, max_residual, max_sweeps):
         """Function that solves the model equations over a time step of dt to get the concentration profiles.
 
         Args:
@@ -173,6 +182,64 @@ class TwoComponentModel(object):
 
             max_residual (float): Maximum value of the residual acceptable when sweeping the equations
 
+            max_sweeps (int): Maximum number of sweeps before stopping
+
+        Returns:
+            has_converged (bool): A true / false value answering if the sweeps have converged
+
+            residuals (numpy.ndarray): A 2x1 numpy array containing residuals after solving the equations
+
+            max_change (float): Maximum change in the concentration fields at any given position for the time interval
+            dt
+
+        """
+        # Solve the model equations for a time step of dt by sweeping max_sweeps times
+        residual_1 = 1e6
+        residual_2 = 1e6
+        residual_3 = 1e6
+        has_converged = False
+
+        # Strang Splitting
+        for i in range(max_sweeps):
+            residual_1 = self._equations[0].sweep(dt=0.5*dt, var=c_vector[0], solver=self._solver)
+            if np.max(residual_1) < max_residual:
+                break
+        max_change_c_1 = np.max(np.abs((c_vector[0] - c_vector[0].old).value))
+        c_vector[0].updateOld()
+
+        for i in range(max_sweeps):
+            residual_2 = self._equations[1].sweep(dt=dt, var=c_vector[1], solver=self._solver)
+            if np.max(residual_2) < max_residual:
+                break
+        max_change_c_2 = np.max(np.abs((c_vector[1] - c_vector[1].old).value))
+        c_vector[1].updateOld()
+
+        for i in range(max_sweeps):
+            residual_3 = self._equations[0].sweep(dt=0.5*dt, var=c_vector[0], solver=self._solver)
+            if np.max(residual_3) < max_residual:
+                break
+        max_change_c_1 = np.max([max_change_c_1, np.max(np.abs((c_vector[0] - c_vector[0].old).value))])
+        c_vector[0].updateOld()
+
+        residuals = np.array([residual_1, residual_2, residual_3])
+        if np.max(residuals) < max_residual:
+            has_converged = True
+        max_change = np.max([max_change_c_1, max_change_c_2])
+
+        return has_converged, residuals, max_change
+
+    def step_once_old_2(self, c_vector, dt, max_sweeps):
+        """Function that solves the model equations over a time step of dt to get the concentration profiles.
+
+        Args:
+            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.
+            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class
+            :class:`fipy.CellVariable`
+
+            dt (float): Size of time step to solve the model equations over once
+
+            max_sweeps (int): Number of times to sweep using the function sweep() in the fipy package
+
         Returns:
             residuals (numpy.ndarray): A 2x1 numpy array containing residuals after solving the equations
 
@@ -181,19 +248,27 @@ class TwoComponentModel(object):
 
         """
 
-        # Solve the model equations for a time step of dt by sweeping till convergence
-        residuals = 1e6
-        # eqn = self._equations[0] & self._equations[1]
-        # eqn.solve(dt=dt)
-        # self._equations[1].solve(dt=dt)
-        # self._equations[0].solve(dt=dt)
-        # self._equations.solve(dt=dt)
+        # Solve the model equations for a time step of dt by sweeping max_sweeps times
+        residual_1 = 1e6
+        residual_2 = 1e6
+        residual_3 = 1e6
 
-        while np.max(residuals) > max_residual:
-            residual_2 = self._equations[1].sweep(var=c_vector[1], dt=dt)
-            residual_1 = self._equations[0].sweep(var=c_vector[0], dt=dt)
-            residuals = np.array([residual_1, residual_2])
-            # residuals = self._equations.sweep(dt=dt)
+        # Split the non-linear operator separately from the linear operators and use Strang splitting to get second
+        # order accuracy
+        # eqn = (self._equations[0] & self._equations[1])
+
+        for i in range(max_sweeps):
+            residual_1 = self._equations[2].sweep(dt=0.5*dt, var=c_vector[0])
+        c_vector[0].updateOld()
+        for i in range(max_sweeps):
+            residual_2 = self._equations[0].sweep(dt=dt)
+        # residual_2 = eqn.solve(dt=dt)
+            residual_3 = self._equations[1].sweep(dt=dt)
+        self.update_old(c_vector=c_vector)
+        for i in range(max_sweeps):
+            residual_4 = self._equations[2].sweep(dt=0.5*dt, var=c_vector[0])
+
+        residuals = np.array([residual_1, residual_2, residual_3, residual_4])
 
         max_change_c_1 = np.max(np.abs((c_vector[0] - c_vector[0].old).value))
         max_change_c_2 = np.max(np.abs((c_vector[1] - c_vector[1].old).value))
@@ -228,13 +303,13 @@ class TwoComponentModel(object):
 
         # Strang Splitting
         for i in range(max_sweeps):
-            residual_1 = self._equations[0].sweep(dt=0.5*dt, solver=self._solver)
-        c_vector[0].updateOld()
-        for i in range(max_sweeps):
-            residual_2 = self._equations[1].sweep(dt=dt, solver=self._solver)
+            residual_1 = self._equations[1].sweep(dt=0.5*dt, var=c_vector[1], solver=self._solver)
         c_vector[1].updateOld()
         for i in range(max_sweeps):
-            residual_3 = self._equations[0].sweep(dt=0.5*dt, solver=self._solver)
+            residual_2 = self._equations[0].sweep(dt=dt, var=c_vector[0], solver=self._solver)
+        c_vector[0].updateOld()
+        for i in range(max_sweeps):
+            residual_3 = self._equations[1].sweep(dt=0.5*dt, var=c_vector[1], solver=self._solver)
 
         residuals = np.array([residual_1, residual_2, residual_3])
 

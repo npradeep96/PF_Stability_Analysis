@@ -2,8 +2,8 @@
 #SBATCH -J StabilityAnalysis
 #SBATCH --mail-user npradeep96
 #SBATCH -p sched_mit_arupc,sched_mit_arupc_long
-#SBATCH -t 3:00:00
-#SBATCH --mem-per-cpu 8000
+#SBATCH -t 18:00:00
+#SBATCH --mem-per-cpu 4000
 cd "$SLURM_SUBMIT_DIR"
 echo $PWD
 

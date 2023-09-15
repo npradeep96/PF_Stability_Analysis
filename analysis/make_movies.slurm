@@ -10,7 +10,7 @@ echo $PWD
 run_program()
 {
  source activate fipyenv
- python make_movies.py --i $input_directory --h spatial_variables.hdf5 --p input_params.txt --m movie_parameters.txt
+ python make_movies.py --i $input_directory --r $match_pattern --h spatial_variables.hdf5 --p input_params.txt --m movie_parameters.txt
  conda deactivate
 }
 

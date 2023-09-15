@@ -150,10 +150,11 @@ def set_model_equations(input_params, concentration_vector, free_en, simulation_
 
     if input_params['reaction_type'] == 1:
         equations.set_production_term(reaction_type=input_params['reaction_type'],
-                                      rate_constant=input_params['k_production'])
+                                      rate_constant=input_params['basal_k_production'])
 
     elif input_params['reaction_type'] == 2:
         equations.set_production_term(reaction_type=input_params['reaction_type'],
+                                      basal_rate_constant=input_params['basal_k_production'],
                                       rate_constant=input_params['k_production'],
                                       sigma=input_params['reaction_sigma'],
                                       center_point=input_params['reaction_center'],

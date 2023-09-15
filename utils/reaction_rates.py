@@ -39,24 +39,30 @@ class LocalizedFirstOrderReaction(object):
     The rate constant is a Gaussian function centered around the specified position with a specified width.
 
     .. math::
-        rate(c) = k e^{-|\\vec{x}-\\vec{x}_0|^2/2\\sigma^2} c
+        rate(c) = k0 + k e^{-|\\vec{x}-\\vec{x}_0|^2/2\\sigma^2} c
     """
 
-    def __init__(self, k, sigma, x0, simulation_geometry):
+    def __init__(self, k0, k, sigma, x0, simulation_geometry):
         """Initialize an object of :class:`first_order_reaction`.
 
         Args:
-             k (float): Rate constant for the first order reaction
+             k0 (float): Basal rate constant uniform everywhere in space
+             k (float): Amplitude of the Gaussian function for the first order reaction rate constant
              sigma (float): Width of the spatially varying Gaussian function
              x0 (float): Center of the spatially varying Gaussian function
              simulation_geometry (Geometry): Instance of one of the classes in :mod:`utils.geometry`
         """
+        self._k0 = k0
         self._k = k
         self._sigma = sigma
         self._x0 = x0
         self._geometry = simulation_geometry
-        self._rate_constant = self._k * np.exp(
+        self._rate_constant = self._k0 + self._k * np.exp(
             -self._geometry.get_mesh_distances_squared_from_point(reference_point=self._x0) / (2.0 * self._sigma ** 2))
+        # self._rate_constant = (self._k0
+        #                        + self._k
+        #                        * (self._geometry.get_mesh_distances_squared_from_point(reference_point=self._x0) <
+        #                           (2.0 * self._sigma)))
 
     def rate(self, concentration):
         """Calculate and return the reaction rate given a concentration value.

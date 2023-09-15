@@ -156,39 +156,44 @@ if __name__ == "__main__":
     parser.add_argument('--h', help="Name of hdf5 file within this directory", required=True)
     parser.add_argument('--p', help="Name of input parameters file for simulations within this directory",
                         required=True)
+    parser.add_argument('--r', help="Directory name pattern to match and pick specific directories out",
+                        required=True)
     parser.add_argument('--m', help="Path to movie parameters file", required=True)
     args = parser.parse_args()
 
     # Directory to search
     base_path = args.i
+    # Regular expression describing the name of the directory to search for hdf5 files
+    regex_1 = str(args.r)
     # Regular expression describing the hdf5 file to search within subdirectories of the base_path
-    regex = re.compile(r'.*' + str(args.h))
+    regex_2 = r'.*' + str(args.h)
     found_at_least_one = 0
 
     # Loop through all subdirectories in the directory "base_path"
     for root, dirs, files in os.walk(base_path):
         # Loop through all files in each subdirectory to see if we have a hdf5 file with the name given in args.f
+        match_1 = re.search(regex_1, root)
         for fi in files:
-            match = re.search(regex, fi)
-            if match is not None:
-                # Found a hdf5 file!
-                found_at_least_one = 1
-                # Read the input_parameters.txt file from the directory:
-                input_parameters_file = os.path.join(root, args.p)
-                input_params = file_operations.input_parse(input_parameters_file)
-                print('Successfully parsed input parameters ...')
-                # Make a mesh of that geometry
-                sim_geometry = simulation_helper.set_mesh_geometry(input_params)
-                print('Successfully set up mesh geometry ...')
-                # Read input parameter file for movies
-                movie_parameters_file = os.path.join(args.m)
-                movie_params = file_operations.input_parse(movie_parameters_file)
-                # Find the correct function from the menu available at the top of this file to make movies
-                movie_maker = get_movie_maker(input_params, movie_params)
-                if movie_maker is None:
-                    print("Could not find an appropriate function to make movies ...")
-                else:
-                    movie_maker(root, fi, movie_params, sim_geometry.mesh)
+            match_2 = re.search(regex_2, fi)
+        if match_1 is not None and match_2 is not None:
+            # Found a hdf5 file!
+            found_at_least_one = 1
+            # Read the input_parameters.txt file from the directory:
+            input_parameters_file = os.path.join(root, args.p)
+            input_params = file_operations.input_parse(input_parameters_file)
+            print('Successfully parsed input parameters ...')
+            # Make a mesh of that geometry
+            sim_geometry = simulation_helper.set_mesh_geometry(input_params)
+            print('Successfully set up mesh geometry ...')
+            # Read input parameter file for movies
+            movie_parameters_file = os.path.join(args.m)
+            movie_params = file_operations.input_parse(movie_parameters_file)
+            # Find the correct function from the menu available at the top of this file to make movies
+            movie_maker = get_movie_maker(input_params, movie_params)
+            if movie_maker is None:
+                print("Could not find an appropriate function to make movies ...")
+            else:
+                movie_maker(root, fi, movie_params, sim_geometry.mesh)
 
     if not found_at_least_one:
         print('Could not find any hdf5 files in the supplied directory!')
