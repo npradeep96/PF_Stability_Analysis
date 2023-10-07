@@ -1,6 +1,6 @@
 # PF_Stability_Analysis
 
-Use the environment.yml file provided to setup your python environment. 
+Use the environment.yml file provided to set up your python environment. 
 
 To run the simulations:
 
@@ -10,5 +10,4 @@ To run the simulations:
 4. To make movies, run the following command on the command line: ``python make_movies.py --i path/to/directory/containing/simulation/data``
 
 If you would like to sweep or iterate over certain values of parameters in the input parameter file, then specify the parameter names and list of values in the sweep_parameters.txt file inside the /inputs directory. Then use the command:
-`` python sweep_parameters.py --s path/to/sweep_parameters.txt --i ../path_to_input/parameter/file --o path/to/directory/containing/simulation/data ``
-Note that for the above to work, you need to have a bash script named run_simulation.slurm of the form described under the /scripts directory.
+`` python sweep_parameters.py --s path/to/sweep_parameters.txt --i ../path_to_input/parameter/file --o path/to/directory/containing/simulation/data ``. Note that for the above to work, you need to have a bash script named run_simulation.slurm of the form described under the /scripts directory.
