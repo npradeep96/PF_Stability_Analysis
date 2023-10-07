@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utils.initial_conditions &mdash; Phase Field Stability Analysis v1.0 documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Phase Field Stability Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Phase Field Stability Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>utils.initial_conditions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utils.initial_conditions</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Module that contains helper functions to initialize concentration fields</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">fipy</span> <span class="k">as</span> <span class="nn">fp</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="initialize_uniform_profile"><a class="viewcode-back" href="../../utils.html#utils.initial_conditions.initialize_uniform_profile">[docs]</a><span class="k">def</span> <span class="nf">initialize_uniform_profile</span><span class="p">(</span><span class="n">c_vector</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Function that initializes a spatially uniform value for concentration variables in c_vector</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        c_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like :math:`[c_1, c_2, ... c_n]`.</span>
+<span class="sd">        The concentration variables :math:`c_i` must be instances of the class :class:`fipy.CellVariable` or equivalent.</span>
+
+<span class="sd">        values (numpy.ndarray): An nx1 vector of values to set the concentration fields to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="n">fp</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">cellVariable</span><span class="o">.</span><span class="n">CellVariable</span><span class="p">:</span>
+            <span class="n">c_vector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="add_noise_to_initial_conditions"><a class="viewcode-back" href="../../utils.html#utils.initial_conditions.add_noise_to_initial_conditions">[docs]</a><span class="k">def</span> <span class="nf">add_noise_to_initial_conditions</span><span class="p">(</span><span class="n">c_vector</span><span class="p">,</span> <span class="n">sigmas</span><span class="p">,</span> <span class="n">random_seed</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Function that initializes a spatially uniform value for concentration variables in c_vector</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        c_vector (numpy.ndarray): An nx1 vector of species concentrations that looks like :math:`[c_1, c_2, ... c_n]`.</span>
+<span class="sd">        The concentration variables :math:`c_i` must be instances of the class :class:`fipy.CellVariable` or equivalent.</span>
+
+<span class="sd">        sigmas (numpy.ndarray): An nx1 vector of values that captures the variance of the noise term added to the</span>
+<span class="sd">        initial condition.</span>
+
+<span class="sd">        random_seed (int): An integer to seed the random number generator to add noise</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Seed random number generator</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="n">fp</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">cellVariable</span><span class="o">.</span><span class="n">CellVariable</span><span class="p">:</span>
+            <span class="n">number_of_mesh_elements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">c_vector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">+=</span> <span class="n">sigmas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">number_of_mesh_elements</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="nucleate_spherical_seed"><a class="viewcode-back" href="../../utils.html#utils.initial_conditions.nucleate_spherical_seed">[docs]</a><span class="k">def</span> <span class="nf">nucleate_spherical_seed</span><span class="p">(</span><span class="n">concentration</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dimension</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">nucleus_size</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Function that nucleates a circular or spherical region of high concentration</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">         concentration (fipy.CellVariable or equivalent): A concentration variable</span>
+
+<span class="sd">         value (float): The value of concentration within the nucleus</span>
+
+<span class="sd">         dimension (int): Can be 1, 2, or 3 corresponding to a 1D, 2D or 3D mesh respectively</span>
+
+<span class="sd">         geometry (Geometry): An instance of class :class:`utils.geometry.Geometry` that contains mesh description</span>
+
+<span class="sd">         nucleus_size (float): Radius of the circular or spherical nucleus</span>
+
+<span class="sd">         location (numpy.ndarray): A vector containing the coordinates of the center of the nucleus relative to origin</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Ensure that the dimensions are the same as the number of coordinates that describe the center of the nucleus</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">location</span><span class="p">)</span> <span class="o">==</span> <span class="n">dimension</span><span class="p">,</span> <span class="s2">&quot;The location coordinates does not match with the dimensions of the mesh&quot;</span>
+    <span class="n">coordinates_of_cells</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">cellCenters</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">if</span> <span class="n">dimension</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">x_centroid</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x_centroid</span> <span class="o">+=</span> <span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coordinates_of_cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_centroid</span><span class="p">)</span>
+        <span class="n">concentration</span><span class="p">[</span><span class="n">distance</span> <span class="o">&lt;</span> <span class="n">nucleus_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">elif</span> <span class="n">dimension</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">x_centroid</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x_centroid</span> <span class="o">+=</span> <span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">y_centroid</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="n">y_centroid</span> <span class="o">+=</span> <span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">coordinates_of_cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_centroid</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                           <span class="o">+</span> <span class="p">(</span><span class="n">coordinates_of_cells</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_centroid</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">concentration</span><span class="p">[</span><span class="n">distance</span> <span class="o">&lt;</span> <span class="n">nucleus_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">elif</span> <span class="n">dimension</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">x_centroid</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x_centroid</span> <span class="o">+=</span> <span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">y_centroid</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="n">y_centroid</span> <span class="o">+=</span> <span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">z_centroid</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
+        <span class="n">z_centroid</span> <span class="o">+=</span> <span class="n">location</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">coordinates_of_cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_centroid</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                           <span class="o">+</span> <span class="p">(</span><span class="n">coordinates_of_cells</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_centroid</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                           <span class="o">+</span> <span class="p">(</span><span class="n">coordinates_of_cells</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">z_centroid</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">concentration</span><span class="p">[</span><span class="n">distance</span> <span class="o">&lt;</span> <span class="n">nucleus_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Dimensions greater than 3 are not supported by the function nucleate_spherical_seed()&quot;</span><span class="p">)</span>
+        <span class="n">exit</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Pradeep Natarajan.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

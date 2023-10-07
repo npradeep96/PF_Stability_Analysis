@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utils.dynamical_equations &mdash; Phase Field Stability Analysis v1.0 documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Phase Field Stability Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Phase Field Stability Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>utils.dynamical_equations</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utils.dynamical_equations</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Module that assembles the model equations for spatiotemporal dynamics of concentration fields.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">fipy</span> <span class="k">as</span> <span class="nn">fp</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">reaction_rates</span> <span class="k">as</span> <span class="nn">rates</span>
+
+
+<div class="viewcode-block" id="TwoComponentModel"><a class="viewcode-back" href="../../utils.html#utils.dynamical_equations.TwoComponentModel">[docs]</a><span class="k">class</span> <span class="nc">TwoComponentModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Two component system, with Model B for species 1 and Model AB or reaction-diffusion with reactions for species 2</span>
+
+<span class="sd">    This class describes the spatiotemporal dynamics of concentration fields two component system given by the below</span>
+<span class="sd">    expression:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \\partial c_1 / \\partial t = \\nabla (M_1 \\nabla \\mu_1 (c_1, c_2))</span>
+
+<span class="sd">        \\partial c_2 / \\partial t = \\nabla (M_2 \\nabla \\mu_2 (c_1, c_2)) + k_1 c_1 - k_2 c_2</span>
+
+<span class="sd">        (or)</span>
+
+<span class="sd">        \\partial c_2 / \\partial t = \\nabla (M_2 \\nabla c_2) + k_1 c_1 - k_2 c_2</span>
+
+<span class="sd">    Species 1 relaxes via Model B dynamics, with a mobility coefficient :math:`M_1`. It&#39;s total amount in the domain is</span>
+<span class="sd">    conserved.</span>
+
+<span class="sd">    Species 2 undergoes a Model AB or reaction-diffusion dynamics. Detailed balance is broken in this equation.</span>
+<span class="sd">    It&#39;s mobility coefficient is :math:`M_2` and is produced by species 1 with a rate constant :math:`k_1` and degrades</span>
+<span class="sd">    with a rate constant :math:`k_2`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mobility_1</span><span class="p">,</span> <span class="n">mobility_2</span><span class="p">,</span> <span class="n">modelAB_dynamics_type</span><span class="p">,</span> <span class="n">degradation_constant</span><span class="p">,</span> <span class="n">free_energy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize an object of :class:`TwoComponentModelBModelAB`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mobility_1 (float): Mobility of species 1</span>
+
+<span class="sd">            mobility_2 (float): Mobility of species 2</span>
+
+<span class="sd">            modelAB_dynamics_type (integer): If = 1, Model AB dynamics. If = 2, reaction-diffusion for species 2.</span>
+
+<span class="sd">            degradation_constant (float): Rate constant for first-order degradation of species 2</span>
+
+<span class="sd">            free_energy: An instance of one of the free energy classes present in :mod:`utils.free_energy`</span>
+
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.</span>
+
+<span class="sd">            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Parameters of the dynamical equations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_M1</span> <span class="o">=</span> <span class="n">mobility_1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_M2</span> <span class="o">=</span> <span class="n">mobility_2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modelAB_dynamics_type</span> <span class="o">=</span> <span class="n">modelAB_dynamics_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_free_energy</span> <span class="o">=</span> <span class="n">free_energy</span>
+        <span class="c1"># Define the reaction terms in the model equations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_production_term</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_degradation_term</span> <span class="o">=</span> <span class="n">rates</span><span class="o">.</span><span class="n">FirstOrderReaction</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">degradation_constant</span><span class="p">)</span>
+        <span class="c1"># Define model equations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># The fipy solver used to solve the model equations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_solver</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="TwoComponentModel.set_production_term"><a class="viewcode-back" href="../../utils.html#utils.dynamical_equations.TwoComponentModel.set_production_term">[docs]</a>    <span class="k">def</span> <span class="nf">set_production_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reaction_type</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Sets the nature of the production term of species :math:`c_2` from :math:`c_1`</span>
+
+<span class="sd">        If reaction_type == 1: First order reaction with rate constant uniform in space.</span>
+
+<span class="sd">        If reaction_type == 2: First order reaction with rate constant Gaussian in space. This requires the parameter</span>
+<span class="sd">        sigma (width of Gaussian), coordinates of the center point of Gaussian, and the mesh geometry as optional input</span>
+<span class="sd">        arguments to compute rate constant at every position in space.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            reaction_type (integer): An integer value describing what reaction type to consider.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">reaction_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Reaction rate constant is uniform in space</span>
+            <span class="n">rate_constant</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rate_constant&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_production_term</span> <span class="o">=</span> <span class="n">rates</span><span class="o">.</span><span class="n">FirstOrderReaction</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">rate_constant</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">reaction_type</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># Reaction rate constant is Gaussian in space</span>
+            <span class="n">basal_rate_constant</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;basal_rate_constant&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">rate_constant</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rate_constant&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sigma&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">center_point</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;center_point&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">geometry</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geometry&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_production_term</span> <span class="o">=</span> <span class="n">rates</span><span class="o">.</span><span class="n">LocalizedFirstOrderReaction</span><span class="p">(</span><span class="n">k0</span><span class="o">=</span><span class="n">basal_rate_constant</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">rate_constant</span><span class="p">,</span>
+                                                                      <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">center_point</span><span class="p">,</span>
+                                                                      <span class="n">simulation_geometry</span><span class="o">=</span><span class="n">geometry</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TwoComponentModel.set_model_equations"><a class="viewcode-back" href="../../utils.html#utils.dynamical_equations.TwoComponentModel.set_model_equations">[docs]</a>    <span class="k">def</span> <span class="nf">set_model_equations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Assemble the model equations given a mesh and concentrations</span>
+
+<span class="sd">        This functions assembles the model equations necessary</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.</span>
+<span class="sd">            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable`</span>
+
+<span class="sd">        Assigns:</span>
+<span class="sd">            self._equations (list): List that would go to 0 if the concentrations in c_vector satisfy the model equation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Get Jacobian matrix associated with the free energy. This gives us the coefficients that multiply the</span>
+        <span class="c1"># gradients of the concentration fields in the Model B dynamics.</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_free_energy</span><span class="p">,</span> <span class="s1">&#39;calculate_jacobian&#39;</span><span class="p">),</span> \
+            <span class="s2">&quot;self._free_energy instance does not have a function calculate_jacobian()&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_free_energy</span><span class="p">,</span> <span class="s1">&#39;_kappa&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_free_energy</span><span class="p">,</span> <span class="s1">&#39;_kappa_tilde&#39;</span><span class="p">),</span> \
+            <span class="s2">&quot;self._free_energy instance does not have an attribute kappa describing the surface energy&quot;</span>
+
+        <span class="n">jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_free_energy</span><span class="o">.</span><span class="n">calculate_jacobian</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)</span>
+        <span class="c1"># Model B dynamics for species 1</span>
+        <span class="c1"># eqn_1 = (fp.TransientTerm(var=c_vector[0])</span>
+        <span class="c1">#          == fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 0], var=c_vector[0])</span>
+        <span class="c1">#          + fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 1], var=c_vector[1])</span>
+        <span class="c1">#          )</span>
+        <span class="c1"># eqn_3 = (fp.TransientTerm(var=c_vector[0])</span>
+        <span class="c1">#          == fp.DiffusionTerm(coeff=(-self._M1, self._free_energy.kappa), var=c_vector[0])</span>
+        <span class="c1">#          )</span>
+        <span class="n">eqn_1</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">TransientTerm</span><span class="p">(</span><span class="n">coeff</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                 <span class="o">==</span> <span class="n">fp</span><span class="o">.</span><span class="n">DiffusionTerm</span><span class="p">(</span><span class="n">coeff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_M1</span> <span class="o">*</span> <span class="n">jacobian</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                 <span class="o">+</span> <span class="n">fp</span><span class="o">.</span><span class="n">DiffusionTerm</span><span class="p">(</span><span class="n">coeff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_M1</span> <span class="o">*</span> <span class="n">jacobian</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                 <span class="o">-</span> <span class="n">fp</span><span class="o">.</span><span class="n">DiffusionTerm</span><span class="p">(</span><span class="n">coeff</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_M1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_free_energy</span><span class="o">.</span><span class="n">kappa</span><span class="p">),</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                 <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_M1</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_free_energy</span><span class="o">.</span><span class="n">get_gaussian_function</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mesh</span><span class="p">))</span><span class="o">.</span><span class="n">faceGrad</span><span class="o">.</span><span class="n">divergence</span>
+                 <span class="p">)</span>
+        <span class="c1"># mu_1_bulk = self._free_energy.calculate_mu_1_bulk(c_vector=c_vector)</span>
+        <span class="c1"># self._psi = fp.CellVariable(mesh=c_vector[0].mesh, value=mu_1_bulk.value, hasOld=True)</span>
+        <span class="c1">#</span>
+        <span class="c1"># eqn_c1 = (fp.TransientTerm(coeff=1.0, var=c_vector[0]) == fp.DiffusionTerm(coeff=self._M1, var=self._psi))</span>
+        <span class="c1"># eqn_psi = (fp.ImplicitSourceTerm(coeff=1.0, var=self._psi)</span>
+        <span class="c1">#            == mu_1_bulk</span>
+        <span class="c1">#            + fp.ImplicitSourceTerm(coeff=jacobian[0, 0], var=c_vector[0]) - jacobian[0, 0] * c_vector[0]</span>
+        <span class="c1">#            + jacobian[0, 1] * (c_vector[1] - c_vector[1].old)</span>
+        <span class="c1">#            - fp.DiffusionTerm(coeff=self._free_energy.kappa, var=c_vector[0])</span>
+        <span class="c1">#            )</span>
+        <span class="c1"># eqn_1 = eqn_c1 &amp; eqn_psi</span>
+        <span class="c1"># eqn_1 = (fp.TransientTerm(coeff=1.0, var=c_vector[0])</span>
+        <span class="c1">#          == self._M1 * mu_1_bulk.faceGrad.divergence</span>
+        <span class="c1">#          + self._M1 * fp.ExponentialConvectionTerm(coeff=jacobian[0, 0].grad, var=c_vector[0])</span>
+        <span class="c1">#          + self._M1 * fp.DiffusionTerm(coeff=jacobian[0, 0], var=c_vector[0])</span>
+        <span class="c1">#          - 2.0 * self._M1 * jacobian[0, 0].grad.dot(c_vector[0].old.grad)</span>
+        <span class="c1">#          - self._M1 * jacobian[0, 0] * c_vector[0].old.faceGrad.divergence</span>
+        <span class="c1">#          - self._M1 * jacobian[0, 0].faceGrad.divergence * c_vector[0].old</span>
+        <span class="c1">#          - fp.DiffusionTerm(coeff=(self._M1, self._free_energy.kappa), var=c_vector[0])</span>
+        <span class="c1">#          )</span>
+
+        <span class="c1"># Model AB dynamics or reaction-diffusion dynamics for species 2 with production and degradation reactions</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modelAB_dynamics_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Model AB dynamics for species 2</span>
+            <span class="n">eqn_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">TransientTerm</span><span class="p">(</span><span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                     <span class="o">==</span> <span class="n">fp</span><span class="o">.</span><span class="n">DiffusionTerm</span><span class="p">(</span><span class="n">coeff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_M2</span> <span class="o">*</span> <span class="n">jacobian</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                     <span class="o">+</span> <span class="n">fp</span><span class="o">.</span><span class="n">DiffusionTerm</span><span class="p">(</span><span class="n">coeff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_M2</span> <span class="o">*</span> <span class="n">jacobian</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                     <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_production_term</span><span class="o">.</span><span class="n">rate</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                     <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_degradation_term</span><span class="o">.</span><span class="n">rate</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                     <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modelAB_dynamics_type</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># Reaction-diffusion dynamics for species 2</span>
+            <span class="n">eqn_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">TransientTerm</span><span class="p">(</span><span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                     <span class="o">==</span> <span class="n">fp</span><span class="o">.</span><span class="n">DiffusionTerm</span><span class="p">(</span><span class="n">coeff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_M2</span> <span class="o">*</span> <span class="n">jacobian</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                     <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_production_term</span><span class="o">.</span><span class="n">rate</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                     <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_degradation_term</span><span class="o">.</span><span class="n">rate</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                     <span class="p">)</span>
+
+        <span class="c1"># self._equations = eqn_1 &amp; eqn_2 &amp; eqn_3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span> <span class="o">=</span> <span class="p">[</span><span class="n">eqn_1</span><span class="p">,</span> <span class="n">eqn_2</span><span class="p">]</span>
+
+        <span class="c1"># Define the relative tolerance of the fipy solver</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_solver</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">DefaultSolver</span><span class="p">(</span><span class="n">tolerance</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TwoComponentModel.step_once"><a class="viewcode-back" href="../../utils.html#utils.dynamical_equations.TwoComponentModel.step_once">[docs]</a>    <span class="k">def</span> <span class="nf">step_once</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">max_residual</span><span class="p">,</span> <span class="n">max_sweeps</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function that solves the model equations over a time step of dt to get the concentration profiles.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.</span>
+<span class="sd">            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable`</span>
+
+<span class="sd">            dt (float): Size of time step to solve the model equations over once</span>
+
+<span class="sd">            max_residual (float): Maximum value of the residual acceptable when sweeping the equations</span>
+
+<span class="sd">            max_sweeps (int): Maximum number of sweeps before stopping</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            has_converged (bool): A true / false value answering if the sweeps have converged</span>
+
+<span class="sd">            residuals (numpy.ndarray): A 2x1 numpy array containing residuals after solving the equations</span>
+
+<span class="sd">            max_change (float): Maximum change in the concentration fields at any given position for the time interval</span>
+<span class="sd">            dt</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Solve the model equations for a time step of dt by sweeping max_sweeps times</span>
+        <span class="n">residual_1</span> <span class="o">=</span> <span class="mf">1e6</span>
+        <span class="n">residual_2</span> <span class="o">=</span> <span class="mf">1e6</span>
+        <span class="n">residual_3</span> <span class="o">=</span> <span class="mf">1e6</span>
+        <span class="n">has_converged</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Strang Splitting</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_sweeps</span><span class="p">):</span>
+            <span class="n">residual_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">solver</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_solver</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">residual_1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_residual</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="n">max_change_c_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">old</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">updateOld</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_sweeps</span><span class="p">):</span>
+            <span class="n">residual_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">solver</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_solver</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">residual_2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_residual</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="n">max_change_c_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">old</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">updateOld</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_sweeps</span><span class="p">):</span>
+            <span class="n">residual_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">solver</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_solver</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">residual_3</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_residual</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="n">max_change_c_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">max_change_c_1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">old</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))])</span>
+        <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">updateOld</span><span class="p">()</span>
+
+        <span class="n">residuals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">residual_1</span><span class="p">,</span> <span class="n">residual_2</span><span class="p">,</span> <span class="n">residual_3</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">residuals</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_residual</span><span class="p">:</span>
+            <span class="n">has_converged</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">max_change</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">max_change_c_1</span><span class="p">,</span> <span class="n">max_change_c_2</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">has_converged</span><span class="p">,</span> <span class="n">residuals</span><span class="p">,</span> <span class="n">max_change</span></div>
+
+<div class="viewcode-block" id="TwoComponentModel.step_once_old_2"><a class="viewcode-back" href="../../utils.html#utils.dynamical_equations.TwoComponentModel.step_once_old_2">[docs]</a>    <span class="k">def</span> <span class="nf">step_once_old_2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">max_sweeps</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function that solves the model equations over a time step of dt to get the concentration profiles.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.</span>
+<span class="sd">            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable`</span>
+
+<span class="sd">            dt (float): Size of time step to solve the model equations over once</span>
+
+<span class="sd">            max_sweeps (int): Number of times to sweep using the function sweep() in the fipy package</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            residuals (numpy.ndarray): A 2x1 numpy array containing residuals after solving the equations</span>
+
+<span class="sd">            max_change (float): Maximum change in the concentration fields at any given position for the time interval</span>
+<span class="sd">            dt</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Solve the model equations for a time step of dt by sweeping max_sweeps times</span>
+        <span class="n">residual_1</span> <span class="o">=</span> <span class="mf">1e6</span>
+        <span class="n">residual_2</span> <span class="o">=</span> <span class="mf">1e6</span>
+        <span class="n">residual_3</span> <span class="o">=</span> <span class="mf">1e6</span>
+
+        <span class="c1"># Split the non-linear operator separately from the linear operators and use Strang splitting to get second</span>
+        <span class="c1"># order accuracy</span>
+        <span class="c1"># eqn = (self._equations[0] &amp; self._equations[1])</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_sweeps</span><span class="p">):</span>
+            <span class="n">residual_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">updateOld</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_sweeps</span><span class="p">):</span>
+            <span class="n">residual_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">)</span>
+        <span class="c1"># residual_2 = eqn.solve(dt=dt)</span>
+            <span class="n">residual_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_old</span><span class="p">(</span><span class="n">c_vector</span><span class="o">=</span><span class="n">c_vector</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_sweeps</span><span class="p">):</span>
+            <span class="n">residual_4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">residuals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">residual_1</span><span class="p">,</span> <span class="n">residual_2</span><span class="p">,</span> <span class="n">residual_3</span><span class="p">,</span> <span class="n">residual_4</span><span class="p">])</span>
+
+        <span class="n">max_change_c_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">old</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="n">max_change_c_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">old</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="n">max_change</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">max_change_c_1</span><span class="p">,</span> <span class="n">max_change_c_2</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">residuals</span><span class="p">,</span> <span class="n">max_change</span></div>
+
+<div class="viewcode-block" id="TwoComponentModel.step_once_old"><a class="viewcode-back" href="../../utils.html#utils.dynamical_equations.TwoComponentModel.step_once_old">[docs]</a>    <span class="k">def</span> <span class="nf">step_once_old</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">max_sweeps</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function that solves the model equations over a time step of dt to get the concentration profiles.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.</span>
+<span class="sd">            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable`</span>
+
+<span class="sd">            dt (float): Size of time step to solve the model equations over once</span>
+
+<span class="sd">            max_sweeps (int): Number of times to sweep using the function sweep() in the fipy package</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            residuals (numpy.ndarray): A 2x1 numpy array containing residuals after solving the equations</span>
+
+<span class="sd">            max_change (float): Maximum change in the concentration fields at any given position for the time interval</span>
+<span class="sd">            dt</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Solve the model equations for a time step of dt by sweeping max_sweeps times</span>
+        <span class="n">residual_1</span> <span class="o">=</span> <span class="mf">1e6</span>
+        <span class="n">residual_2</span> <span class="o">=</span> <span class="mf">1e6</span>
+        <span class="n">residual_3</span> <span class="o">=</span> <span class="mf">1e6</span>
+
+        <span class="c1"># Strang Splitting</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_sweeps</span><span class="p">):</span>
+            <span class="n">residual_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">solver</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_solver</span><span class="p">)</span>
+        <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">updateOld</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_sweeps</span><span class="p">):</span>
+            <span class="n">residual_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">solver</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_solver</span><span class="p">)</span>
+        <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">updateOld</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_sweeps</span><span class="p">):</span>
+            <span class="n">residual_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equations</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">solver</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_solver</span><span class="p">)</span>
+
+        <span class="n">residuals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">residual_1</span><span class="p">,</span> <span class="n">residual_2</span><span class="p">,</span> <span class="n">residual_3</span><span class="p">])</span>
+
+        <span class="n">max_change_c_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">old</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="n">max_change_c_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">old</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="n">max_change</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">max_change_c_1</span><span class="p">,</span> <span class="n">max_change_c_2</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">residuals</span><span class="p">,</span> <span class="n">max_change</span></div>
+
+<div class="viewcode-block" id="TwoComponentModel.update_old"><a class="viewcode-back" href="../../utils.html#utils.dynamical_equations.TwoComponentModel.update_old">[docs]</a>    <span class="k">def</span> <span class="nf">update_old</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)):</span>
+            <span class="n">c_vector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">updateOld</span><span class="p">()</span></div></div>
+        <span class="c1"># self._psi.updateOld()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Pradeep Natarajan.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

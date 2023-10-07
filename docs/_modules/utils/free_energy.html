@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utils.free_energy &mdash; Phase Field Stability Analysis v1.0 documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Phase Field Stability Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Phase Field Stability Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>utils.free_energy</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utils.free_energy</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Module that contains classes describing different free energies.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">fipy</span> <span class="k">as</span> <span class="nn">fp</span>
+
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadratic"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadratic">[docs]</a><span class="k">class</span> <span class="nc">TwoCompDoubleWellFHCrossQuadratic</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Free energy of two component system with a quartic well and quadratic well self, and FH cross interactions.</span>
+
+<span class="sd">    This class describes the free energy density of a two component system given by the below expression:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">       f[c_1, c_2, \\vec{r}] = f_{bulk}[c_1, c_2] + f_{BL}[c_1, \\vec{r}] =</span>
+<span class="sd">       = 0.25 \\alpha (c_1-\\bar{c}_1)^4 + 0.5 \\beta (c_1-\\bar{c}_1)^2 + \\gamma c_1 c_2</span>
+<span class="sd">       + 0.5 \\lambda c^2_2 + 0.5 \\kappa |\\nabla c_1|^2</span>
+<span class="sd">       - c \\exp^{-|\\vec{r}-\\vec{r}_0|^2/2\\sigma^2} c_1</span>
+
+<span class="sd">    Interactions between molecules of species 1 are described by a quartic-well potential. If :math:`\\beta &lt; 0`, then</span>
+<span class="sd">    we get a double-well and species 1 can phase separate by itself.</span>
+
+<span class="sd">    Interactions between molecules of species 2 are described by a quadratic potential. For this term, :math:`\\lambda`</span>
+<span class="sd">    has to be &gt; 0. Otherwise, the self diffusion of species 2 will cause all molecules to collapse into a point.</span>
+
+<span class="sd">    The cross interactions between the species are described by a mean-field product of concentrations with the</span>
+<span class="sd">    interaction strength captured by a Flory parameter :math:`\\gamma`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">lamda</span><span class="p">,</span> <span class="n">kappa</span><span class="p">,</span> <span class="n">c_bar_1</span><span class="p">,</span> <span class="n">well_center</span><span class="p">,</span> <span class="n">well_depth</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize an object of :class:`TwoCompDoubleWellFHCrossQuadratic`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            alpha (float): Parameter associated with the quartic term :math:`\\alpha (c_1-\\bar{c}_1)^4` of species 1</span>
+
+<span class="sd">            beta (float): Parameter associated with the quadratic term :math:`\\beta (c_1-\\bar{c}_1)^2` of species 1</span>
+
+<span class="sd">            gamma (float): Parameter that describes the cross-interactions between the species :math:`\\gamma c_1 c_2`</span>
+
+<span class="sd">            lamda (float): Parameter that describes the self interaction of species 2 using :math:`\\lambda c^2_2`</span>
+
+<span class="sd">            kappa (float): Parameter that describes the surface tension associated with species 1</span>
+<span class="sd">            :math:`\\kappa/2 |\\nabla c_1|^2`</span>
+
+<span class="sd">            c_bar_1 (float): Critical concentration of species 1 at the onset of phase separation</span>
+
+<span class="sd">            well_center (numpy.ndarray): Coordinates of the center of a Gaussian attractive well. 2d or 3D array</span>
+
+<span class="sd">            well_depth (float): Depth of the Gaussian well</span>
+
+<span class="sd">            sigma (float): Width of the Gaussian well</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Ensure that the parameter lambda is always positive</span>
+        <span class="c1"># Otherwise, we will get nonsense results in the simulations</span>
+        <span class="k">assert</span> <span class="n">lamda</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;The parameter lambda is negative. Please supply a positive value&quot;</span>
+
+        <span class="c1"># Assign all free energy parameters to private variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_beta</span> <span class="o">=</span> <span class="n">beta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span> <span class="o">=</span> <span class="n">gamma</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lambda</span> <span class="o">=</span> <span class="n">lamda</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kappa</span> <span class="o">=</span> <span class="n">kappa</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span> <span class="o">=</span> <span class="n">c_bar_1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_well_center</span> <span class="o">=</span> <span class="n">well_center</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_well_depth</span> <span class="o">=</span> <span class="n">well_depth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sigma</span> <span class="o">=</span> <span class="n">sigma</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">kappa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter for the private variable self._kappa.</span>
+<span class="sd">        This is used to set up the surface tension term in the dynamical equations&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kappa</span>
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadratic.get_gaussian_function"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.get_gaussian_function">[docs]</a>    <span class="k">def</span> <span class="nf">get_gaussian_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mesh</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function that calculates :math:`e^{-|\\vec{r}-\\vec{r}_0|^2/2\\sigma^2}`</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mesh (fipy or Gmsh mesh): A mesh generated by fipy in-built functions or Gmsh</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            gaussian_function (fipy.cellVariable): A variable storing the Gaussian function evaluated at each mesh point</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get mesh dimensions from the CellVariables in c_vector</span>
+        <span class="n">mesh_dimensions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">cellCenters</span><span class="o">.</span><span class="n">value</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Calculate distance of each mesh point from the center of the Gaussian well</span>
+        <span class="n">distance_squared_from_well_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([(</span><span class="n">mesh</span><span class="o">.</span><span class="n">cellCenters</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_well_center</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+                                                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mesh_dimensions</span><span class="p">)],</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">gaussian_function</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">CellVariable</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
+                                            <span class="n">value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">distance_squared_from_well_center</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)))</span>
+        <span class="n">gaussian_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_well_depth</span> <span class="o">*</span> <span class="n">gaussian_function</span>
+        <span class="k">return</span> <span class="n">gaussian_function</span></div>
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadratic.calculate_fe"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.calculate_fe">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_fe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate free energy according to the expression in class description.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.</span>
+<span class="sd">            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable` or equivalent. These instances should have an attribute called :attr:`.grad.mag`</span>
+<span class="sd">            that returns the magnitude of gradient of the concentration field for every position in the mesh to compute</span>
+<span class="sd">            the surface tension contribution of the free energy</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            free_energy (fipy.cellVariable): Free energy value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check that c_vector satisfies the necessary conditions</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> \
+            <span class="s2">&quot;The shape of c_vector passed to TwoCompDoubleWellFHCrossQuadratic.calculate_fe() is not 2x1&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;grad&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[0] has no attribute grad associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;grad&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[1] has no function grad associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">grad</span><span class="p">,</span> <span class="s1">&#39;mag&#39;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[0].grad has no attribute mag associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grad</span><span class="p">,</span> <span class="s1">&#39;mag&#39;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[1].grad has no attribute mag associated with it&quot;</span>
+
+        <span class="c1"># Calculate the free energy</span>
+        <span class="n">fe</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">/</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">4</span>
+              <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beta</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+              <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gaussian_function</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mesh</span><span class="p">)</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+              <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+              <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lambda</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+              <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kappa</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">mag</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">fe</span></div>
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadratic.calculate_mu"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.calculate_mu">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate chemical potential of the species.</span>
+
+<span class="sd">        Chemical potential of species 1:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \\mu_1[c_1, c_2] = \\delta f / \\delta c_1 = \\alpha (c_1-\\bar{c}_1)^3 + \\beta (c_1-\\bar{c}_1)</span>
+<span class="sd">                               + \\gamma c_2 - \\kappa \\nabla^2 c_1 - K \\exp^{-|\\vec{r}-\\vec{r}|^2/2\\sigma^2}</span>
+
+<span class="sd">        Chemical potential of species 2:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \\mu_2[c_1, c_2] = \\delta f / \\delta c_2 = \\gamma c_1 + \\lambda c_2</span>
+
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`. The</span>
+<span class="sd">            concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable` or equivalent. These instances should have an attribute called</span>
+<span class="sd">            :attr:`.faceGrad.divergence` that returns the Laplacian of the concentration field for every position in the</span>
+<span class="sd">            mesh to compute the surface tension contribution to the chemical potential of species 1</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            mu (list): A 2x1 vector of chemical potentials that looks like :math:`[\\mu_1, \\mu_2]`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check that c_vector satisfies the necessary conditions</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> \
+            <span class="s2">&quot;The shape of c_vector passed to TwoCompDoubleWellFHCrossQuadratic.calculate_mu() is not 2x1&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;faceGrad&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[0] has no attribute faceGrad associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;faceGrad&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[1] has no attribute faceGrad associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">faceGrad</span><span class="p">,</span> <span class="s2">&quot;divergence&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[0].faceGrad has no attribute divergence associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">faceGrad</span><span class="p">,</span> <span class="s2">&quot;divergence&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[1].faceGrad has no attribute divergence associated with it&quot;</span>
+
+        <span class="c1"># Calculate the chemical potentials</span>
+        <span class="n">mu_1</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beta</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span>
+                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gaussian_function</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mesh</span><span class="p">)</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kappa</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">faceGrad</span><span class="o">.</span><span class="n">divergence</span><span class="p">)</span>
+        <span class="n">mu_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lambda</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="p">[</span><span class="n">mu_1</span><span class="p">,</span> <span class="n">mu_2</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">mu</span></div>
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadratic.calculate_jacobian"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadratic.calculate_jacobian">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_jacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the Jacobian matrix of coefficients to feed to the transport equations.</span>
+
+<span class="sd">        In calculating the Jacobian, we ignore the surface tension and any spatially dependent terms and only take the</span>
+<span class="sd">        bulk part of the free energy that depends on the concentration fields:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            J_{11} = \\delta^2 f_{bulk} / \\delta c^2_1 = 3 \\alpha (c_1 - \\bar{c}_1)^2 + \\beta</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            J_{12} = \\delta^2 f_{bulk} / \\delta c_1 \\delta c_2 = \\gamma</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            J_{21} = \\delta^2 f_{bulk} / \\delta c_1 \\delta c_2 = \\gamma</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            J_{22} = \\delta^2 f_{bulk} / \\delta c^2_2 = \\lambda</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.The</span>
+<span class="sd">            concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable` or equivalent</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            jacobian (numpy.ndarray): A 2x2 Jacobian matrix, with each entry itself being a vector of the same size as</span>
+<span class="sd">            c_vector[0]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check that c_vector satisfies the necessary conditions</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> \
+            <span class="s2">&quot;The shape of c_vector passed to TwoCompDoubleWellFHCrossQuadratic.calculate_mu() is not 2x1&quot;</span>
+
+        <span class="c1"># Calculate the Jacobian matrix</span>
+        <span class="n">jacobian</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span><span class="p">],</span>
+                             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lambda</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">jacobian</span></div></div>
+
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadraticDimensionless"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadraticDimensionless">[docs]</a><span class="k">class</span> <span class="nc">TwoCompDoubleWellFHCrossQuadraticDimensionless</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Dimensionless free energy of two component system with a double well self, and FH cross interactions.</span>
+
+<span class="sd">    This class describes the free energy density of a two component system given by the below expression:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">       \\tilde{f}[\\tilde{c}_1, \\tilde{c}_2, \\vec{r}] =</span>
+<span class="sd">       \\tilde{f}_{bulk}[\\tilde{c}_1, \\tilde{c}_2] + \\tilde{f}_{BL}[\\tilde{c}_1, \\vec{r}] =</span>
+<span class="sd">       0.25 (\\tilde{c}_1-\\bar{c_1})^4 + 0.5 \\tilde{\\beta} (\\tilde{c}_1-\\bar{c_1})^2</span>
+<span class="sd">       + \\tilde{\\gamma} \\tilde{c}_1 \\tilde{c}_2 + 0.5 \\tilde{\\lambda} \\tilde{c}^2_2</span>
+<span class="sd">       + 0.5 \\tilde{\\kappa} |\\tilde{\\nabla} \\tilde{c}_1|^2</span>
+<span class="sd">       - \\tilde{c} e^{-|\\vec{r}-\\vec{r}_0|^2/2\\sigma^2} \\tilde{c}_1</span>
+
+<span class="sd">    Interactions between molecules of species 1 are described by a quartic-well potential. If</span>
+<span class="sd">    :math:`\\tilde{\\beta} &lt; 0`, then we get a double-well and species 1 can phase separate by itself.</span>
+
+<span class="sd">    Interactions between molecules of species 2 are described by a quadratic potential. For this term,</span>
+<span class="sd">    :math:`\\tilde{\\lambda}` has to be &gt; 0. Otherwise, the self diffusion of species 2 will cause all molecules to</span>
+<span class="sd">    collapse into a point.</span>
+
+<span class="sd">    The cross interactions between the species are described by a mean-field product of concentrations with the</span>
+<span class="sd">    interaction strength captured by a Flory parameter :math:`\\tilde{\\gamma}`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_bar_1</span><span class="p">,</span> <span class="n">beta_tilde</span><span class="p">,</span> <span class="n">gamma_tilde</span><span class="p">,</span> <span class="n">lamda_tilde</span><span class="p">,</span> <span class="n">kappa_tilde</span><span class="p">,</span> <span class="n">well_center</span><span class="p">,</span> <span class="n">well_depth</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize an object of :class:`TwoCompDoubleWellFHCrossQuadratic`.</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">            c_bar_1 (float): Critical concentration of species 1 at the onset of phase separation</span>
+
+<span class="sd">            beta_tilde (float): Parameter associated with the quadratic term :math:`\\beta (c_1-1)^2` of species 1</span>
+
+<span class="sd">            gamma_tilde (float): Parameter that describes the cross-interactions between the species</span>
+<span class="sd">            :math:`\\tilde{\\gamma} \\tilde{c}_1 \\tilde{c}_2`</span>
+
+<span class="sd">            lamda_tilde (float): Parameter that describes the self interaction of species 2 using</span>
+<span class="sd">            :math:`\\tilde{\\lambda} \\tilde{c}^2_2`</span>
+
+<span class="sd">            kappa_tilde (float): Parameter that describes the surface tension associated with species 1</span>
+<span class="sd">            :math:`\\tilde{\\kappa}/2 |\\tilde{\\nabla} \\tilde{c}_1|^2`</span>
+
+<span class="sd">            well_center (numpy.ndarray): Coordinates of the center of a Gaussian attractive well. 2d or 3D array</span>
+
+<span class="sd">            well_depth (float): Depth of the Gaussian well</span>
+
+<span class="sd">            sigma (float): Width of the Gaussian well</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Ensure that the parameter lambda is always positive</span>
+        <span class="c1"># Otherwise, we will get nonsense results in the simulations</span>
+        <span class="k">assert</span> <span class="n">lamda_tilde</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;The parameter lambda is negative. Please supply a positive value&quot;</span>
+
+        <span class="c1"># Assign all free energy parameters to private variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_beta_tilde</span> <span class="o">=</span> <span class="n">beta_tilde</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gamma_tilde</span> <span class="o">=</span> <span class="n">gamma_tilde</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lambda_tilde</span> <span class="o">=</span> <span class="n">lamda_tilde</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kappa_tilde</span> <span class="o">=</span> <span class="n">kappa_tilde</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_well_center</span> <span class="o">=</span> <span class="n">well_center</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_well_depth</span> <span class="o">=</span> <span class="n">well_depth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sigma</span> <span class="o">=</span> <span class="n">sigma</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span> <span class="o">=</span> <span class="n">c_bar_1</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">kappa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Getter for the private variable self._kappa_tilde.</span>
+<span class="sd">        This is used to set up the surface tension term in the dynamical equations&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kappa_tilde</span>
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadraticDimensionless.get_gaussian_function"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadraticDimensionless.get_gaussian_function">[docs]</a>    <span class="k">def</span> <span class="nf">get_gaussian_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mesh</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function that calculates :math:`e^{-|\\vec{r}-\\vec{r}_0|^2/2\\sigma^2}`</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mesh (fipy or Gmsh mesh): A mesh generated by fipy in-built functions or Gmsh</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            gaussian_function (fipy.cellVariable): A variable storing the Gaussian function evaluated at each mesh point</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get mesh dimensions from the CellVariables in c_vector</span>
+        <span class="n">mesh_dimensions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">cellCenters</span><span class="o">.</span><span class="n">value</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Calculate distance of each mesh point from the center of the Gaussian well</span>
+        <span class="n">distance_squared_from_well_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([(</span><span class="n">mesh</span><span class="o">.</span><span class="n">cellCenters</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_well_center</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+                                                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mesh_dimensions</span><span class="p">)],</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">gaussian_function</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">CellVariable</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
+                                            <span class="n">value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">distance_squared_from_well_center</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)))</span>
+        <span class="n">gaussian_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_well_depth</span> <span class="o">*</span> <span class="n">gaussian_function</span>
+        <span class="k">return</span> <span class="n">gaussian_function</span></div>
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_fe"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_fe">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_fe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate free energy according to the expression in class description.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.</span>
+<span class="sd">            The concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable` or equivalent. These instances should have an attribute called :attr:`.grad.mag`</span>
+<span class="sd">            that returns the magnitude of gradient of the concentration field for every position in the mesh to compute</span>
+<span class="sd">            the surface tension contribution of the free energy</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            free_energy (fipy.cellVariable): Free energy value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check that c_vector satisfies the necessary conditions</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> \
+            <span class="s2">&quot;The shape of c_vector passed to TwoCompDoubleWellFHCrossQuadratic.calculate_fe() is not 2x1&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;grad&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[0] has no attribute grad associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;grad&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[1] has no function grad associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">grad</span><span class="p">,</span> <span class="s1">&#39;mag&#39;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[0].grad has no attribute mag associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grad</span><span class="p">,</span> <span class="s1">&#39;mag&#39;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[1].grad has no attribute mag associated with it&quot;</span>
+
+        <span class="c1"># Calculate the free energy</span>
+        <span class="n">fe</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.25</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">4</span>
+              <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beta_tilde</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+              <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gaussian_function</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mesh</span><span class="p">)</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+              <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma_tilde</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+              <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lambda_tilde</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+              <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kappa_tilde</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">mag</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">fe</span></div>
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_mu"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_mu">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate chemical potential of the species.</span>
+
+<span class="sd">        Chemical potential of species 1:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \\tilde{\\mu}_1[\\tilde{c}_1, \\tilde{c}_2] = \\delta \\tilde{f} / \\delta \\tilde{c}_1 =</span>
+<span class="sd">            (\\tilde{c}_1-1)^3 + \\tilde{\\beta} (\\tilde{c}_1-1) + \\tilde{\\gamma} \\tilde{c}_2</span>
+<span class="sd">            - \\tilde{\\kappa} \\tilde{\\nabla}^2 \\tilde{c}_1 - \\tilde{c} \\exp^{-|\\vec{r}-\\vec{r}|^2/2\\sigma^2}</span>
+
+<span class="sd">        Chemical potential of species 2:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \\tilde{\\mu}_2[\\tilde{c}_1, \\tilde{c}_2] = \\delta \\tilde{f} / \\delta \\tilde{c}_2</span>
+<span class="sd">            = \\tilde{\\gamma} \\tilde{c}_1 + \\tilde{\\lambda} \\tilde{c}_2</span>
+
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`. The</span>
+<span class="sd">            concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable` or equivalent. These instances should have an attribute called</span>
+<span class="sd">            :attr:`.faceGrad.divergence` that returns the Laplacian of the concentration field for every position in the</span>
+<span class="sd">            mesh to compute the surface tension contribution to the chemical potential of species 1</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            mu (list): A 2x1 vector of chemical potentials that looks like :math:`[\\mu_1, \\mu_2]`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check that c_vector satisfies the necessary conditions</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> \
+            <span class="s2">&quot;The shape of c_vector passed to TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_mu() is not 2x1&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;faceGrad&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[0] has no attribute faceGrad associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;faceGrad&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[1] has no attribute faceGrad associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">faceGrad</span><span class="p">,</span> <span class="s2">&quot;divergence&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[0].faceGrad has no attribute divergence associated with it&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">faceGrad</span><span class="p">,</span> <span class="s2">&quot;divergence&quot;</span><span class="p">),</span> \
+            <span class="s2">&quot;The instance c_vector[1].faceGrad has no attribute divergence associated with it&quot;</span>
+
+        <span class="c1"># Calculate the chemical potentials</span>
+        <span class="n">mu_1</span> <span class="o">=</span> <span class="p">((</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beta_tilde</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span>
+                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gaussian_function</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mesh</span><span class="p">)</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma_tilde</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kappa_tilde</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">faceGrad</span><span class="o">.</span><span class="n">divergence</span><span class="p">)</span>
+        <span class="n">mu_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma_tilde</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lambda_tilde</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="p">[</span><span class="n">mu_1</span><span class="p">,</span> <span class="n">mu_2</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">mu</span></div>
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_mu_1_bulk"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_mu_1_bulk">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_mu_1_bulk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate chemical potential associated with bulk free energy of species 1 with the double well potential</span>
+
+<span class="sd">        Bulk chemical potential of species 1:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \\tilde{\\mu}_1[\\tilde{c}_1, \\tilde{c}_2] = \\delta \\tilde{f} / \\delta \\tilde{c}_1 =</span>
+<span class="sd">            (\\tilde{c}_1-1)^3 + \\tilde{\\beta} (\\tilde{c}_1-1) + \\tilde{\\gamma} \\tilde{c}_2</span>
+<span class="sd">            - \\tilde{c} \\exp^{-|\\vec{r}-\\vec{r}|^2/2\\sigma^2}</span>
+
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`. The</span>
+<span class="sd">            concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable` or equivalent. These instances should have an attribute called</span>
+<span class="sd">            :attr:`.faceGrad.divergence` that returns the Laplacian of the concentration field for every position in the</span>
+<span class="sd">            mesh to compute the surface tension contribution to the chemical potential of species 1</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            mu_1 (fipy.CellVariable): The chemical potential :math:`\\mu_1[\\tilde{c}_1, \\tilde{c}_2]`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check that c_vector satisfies the necessary conditions</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> \
+            <span class="s2">&quot;The shape of c_vector passed to TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_mu() is not 2x1&quot;</span>
+
+        <span class="c1"># Calculate the chemical potentials</span>
+        <span class="n">mu_1</span> <span class="o">=</span> <span class="p">((</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beta_tilde</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span>
+                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gaussian_function</span><span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mesh</span><span class="p">)</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma_tilde</span> <span class="o">*</span> <span class="n">c_vector</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">mu_1</span></div>
+
+<div class="viewcode-block" id="TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_jacobian"><a class="viewcode-back" href="../../utils.html#utils.free_energy.TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_jacobian">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_jacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the Jacobian matrix of coefficients to feed to the transport equations.</span>
+
+<span class="sd">        In calculating the Jacobian, we ignore the surface tension and any spatially dependent terms and only take the</span>
+<span class="sd">        bulk part of the free energy that depends on the concentration fields:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            J_{11} = \\delta^2 \\tilde{f}_{bulk} / \\delta \\tilde{c}^2_1 = 3 (\\tilde{c}_1 - 1)^2 + \\tilde{\\beta}</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            J_{12} = \\delta^2 \\tilde{f}_{bulk} / \\delta \\tilde{c}_1 \\delta \\tilde{c}_2 = \\tilde{\\gamma}</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            J_{21} = \\delta^2 \\tilde{f}_{bulk} / \\delta \\tilde{c}_1 \\delta \\tilde{c}_2 = \\tilde{\\gamma}</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            J_{22} = \\delta^2 \\tilde{f}_{bulk} / \\delta \\tilde{c}^2_2 = \\tilde{\\lambda}</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.The</span>
+<span class="sd">            concentration variables :math:`c_1` and :math:`c_2` must be instances of the class</span>
+<span class="sd">            :class:`fipy.CellVariable` or equivalent</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            jacobian (numpy.ndarray): A 2x2 Jacobian matrix, with each entry itself being a vector of the same size as</span>
+<span class="sd">            c_vector[0]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check that c_vector satisfies the necessary conditions</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">c_vector</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> \
+            <span class="s2">&quot;The shape of c_vector passed to TwoCompDoubleWellFHCrossQuadraticDimensionless.calculate_jacobian() </span><span class="se">\</span>
+<span class="s2">            is not 2x1&quot;</span>
+
+        <span class="c1"># Calculate the Jacobian matrix</span>
+        <span class="n">jacobian</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_vector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_bar_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beta_tilde</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma_tilde</span><span class="p">],</span>
+                             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_gamma_tilde</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">_lambda_tilde</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">jacobian</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Pradeep Natarajan.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

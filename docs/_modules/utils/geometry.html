@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utils.geometry &mdash; Phase Field Stability Analysis v1.0 documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Phase Field Stability Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Phase Field Stability Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>utils.geometry</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utils.geometry</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Module that contains functions to set up discrete spatial mesh for simulations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">fipy</span> <span class="k">as</span> <span class="nn">fp</span>
+<span class="kn">from</span> <span class="nn">fipy</span> <span class="kn">import</span> <span class="n">Gmsh2D</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="Geometry"><a class="viewcode-back" href="../../utils.html#utils.geometry.Geometry">[docs]</a><span class="k">class</span> <span class="nc">Geometry</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class that describes a mesh geometry and some associated operations with the mesh grid points.</span>
+
+<span class="sd">    This is a base class for the different kinds of mesh geometries used in the simulations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Geometry object, which initializes an attribute called mesh if available.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mesh (fipy.meshes.mesh): A fipy mesh variable. Default value is None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mesh</span>
+
+<div class="viewcode-block" id="Geometry.get_mesh_distances_squared_from_point"><a class="viewcode-back" href="../../utils.html#utils.geometry.Geometry.get_mesh_distances_squared_from_point">[docs]</a>    <span class="k">def</span> <span class="nf">get_mesh_distances_squared_from_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Function that calculates the squared distance of each mesh point from a reference point.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            reference_point (numpy.ndarray): An nx1 vector containing coordinates of the reference point</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             squared_distances (fipy.variable): A fipy variable that stores the distances of each mesh point from the</span>
+<span class="sd">             reference point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># check if the reference point actually has 2 dimensions</span>
+
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">reference_point</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">cellCenters</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> \
+            <span class="s2">&quot;The reference point isn&#39;t in the same dimensional space as the mesh&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">squared_distances</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">CellVariable</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="p">,</span>
+                                                <span class="n">value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="bp">self</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">cellCenters</span> <span class="o">-</span> <span class="n">reference_point</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">squared_distances</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;self.mesh is expected to be a fipy.meshes.mesh variable. It does not have an attribute cellCenters&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="CircularMesh2d"><a class="viewcode-back" href="../../utils.html#utils.geometry.CircularMesh2d">[docs]</a><span class="k">class</span> <span class="nc">CircularMesh2d</span><span class="p">(</span><span class="n">Geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class to create a 2D circular mesh derived from the base class Geometry.</span>
+
+<span class="sd">    This class is defined by two parameters - radius of the circle and cell size.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">cell_size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize a circular 2D mesh object depending on the radius and cell size. This uses the function Gmsh2D()</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            radius (float): Radius of the total domain</span>
+
+<span class="sd">            cell_size (float): Side length of a discrete mesh element</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize base class Geometry</span>
+        <span class="n">Geometry</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># Construct a circular mesh</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">Gmsh2D</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;   cell_size = </span><span class="si">%g</span><span class="s1">;</span>
+<span class="s1">                                 radius = </span><span class="si">%g</span><span class="s1">;</span>
+<span class="s1">                                 Point(1) = {0, 0, 0, cell_size};</span>
+<span class="s1">                                 Point(2) = {-radius, 0, 0, cell_size};</span>
+<span class="s1">                                 Point(3) = {0, radius, 0, cell_size};</span>
+<span class="s1">                                 Point(4) = {radius, 0, 0, cell_size};</span>
+<span class="s1">                                 Point(5) = {0, -radius, 0, cell_size};</span>
+<span class="s1">                                 Circle(6) = {2, 1, 3};</span>
+<span class="s1">                                 Circle(7) = {3, 1, 4};</span>
+<span class="s1">                                 Circle(8) = {4, 1, 5};</span>
+<span class="s1">                                 Circle(9) = {5, 1, 2};</span>
+<span class="s1">                                 Line Loop(10) = {6, 7, 8, 9};</span>
+<span class="s1">                                 Plane Surface(11) = </span><span class="si">{10}</span><span class="s1">;</span>
+<span class="s1">                              &#39;&#39;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cell_size</span><span class="p">,</span> <span class="n">radius</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="SquareMesh2d"><a class="viewcode-back" href="../../utils.html#utils.geometry.SquareMesh2d">[docs]</a><span class="k">class</span> <span class="nc">SquareMesh2d</span><span class="p">(</span><span class="n">Geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class to create a 2D square mesh derived from the base class Geometry.</span>
+
+<span class="sd">    This class is defined by two parameters - edge length of the square and size of mesh element.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">dx</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize a square 2D mesh object depending on the length of the square and the size of the mesh element.</span>
+
+<span class="sd">        This function uses the Grid2D function from the fipy package to create a 2d square mesh</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            length (float): Length of the square domain</span>
+
+<span class="sd">            dx (float): Side length of a discrete mesh element in the square domain</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize base class Geometry</span>
+        <span class="n">Geometry</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># Construct a square mesh</span>
+        <span class="n">nx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">length</span> <span class="o">/</span> <span class="n">dx</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">Grid2D</span><span class="p">(</span><span class="n">nx</span><span class="o">=</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="o">=</span><span class="n">nx</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">dx</span><span class="p">)</span>
+        <span class="c1"># Center the mesh at (0,0)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">*</span> <span class="mf">0.5</span></div>
+
+
+<div class="viewcode-block" id="CubeMesh3d"><a class="viewcode-back" href="../../utils.html#utils.geometry.CubeMesh3d">[docs]</a><span class="k">class</span> <span class="nc">CubeMesh3d</span><span class="p">(</span><span class="n">Geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class to create a 3D cubical mesh derived from the base class Geometry.</span>
+
+<span class="sd">    This class is defined by two parameters - edge length of the cube and size of mesh element.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">dx</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize a 3D cubical mesh depending on the length and size of mesh element</span>
+
+<span class="sd">        This function uses the Grid3D function from the fipy package to create a 3d cubical mesh</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            length (float): Length of the cubical domain</span>
+
+<span class="sd">            dx (float): Side length of a discrete mesh element in the cubical domain</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            mesh (Grid3D): A 3d cubical mesh that is an instance of fipy.Grid3D</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize base class Geometry</span>
+        <span class="n">Geometry</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># Construct a square mesh</span>
+        <span class="n">nx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">length</span> <span class="o">/</span> <span class="n">dx</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">Grid3D</span><span class="p">(</span><span class="n">nx</span><span class="o">=</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="o">=</span><span class="n">nx</span><span class="p">,</span> <span class="n">nz</span><span class="o">=</span><span class="n">nx</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">dz</span><span class="o">=</span><span class="n">dx</span><span class="p">)</span>
+        <span class="c1"># Center the mesh at (0,0)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mesh</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">*</span> <span class="mf">0.5</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Pradeep Natarajan.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
