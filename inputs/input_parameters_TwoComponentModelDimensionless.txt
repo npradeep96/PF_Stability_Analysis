@@ -5,17 +5,17 @@ beta_tilde, -0.25
 gamma_tilde, 0.1
 kappa_tilde, 0.01
 lamda_tilde, 1.0
-well_depth, 0.0
+well_depth, 1.0
 well_center, [0.0, 0.0]
-sigma, 5.0
+sigma, 2.5
 
 # Kinetic parameters
 modelAB_dynamics_type, 1
-reaction_type, 2
+reaction_type, 1
 M1, 10.0
 M2, 1.0
 basal_k_production, 10.0
-k_production, 2.0
+k_production, 0.0
 k_degradation, 1.0
 reaction_sigma, 1.5
 reaction_center, [0.0, 0.0]
@@ -43,11 +43,11 @@ dt, 1e-6
 dt_max, 0.1
 dt_min, 1e-8
 max_change_allowed, 0.05
-duration, 200
-total_steps, 2000
+duration, 50
+total_steps, 500
 max_sweeps, 5
 max_residual, 0.1
-data_log, 50
+data_log, 20
 
 # Implement time profile of parameters
 time_profile, []

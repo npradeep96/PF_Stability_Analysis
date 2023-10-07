@@ -17,10 +17,11 @@ dependencies:
   - backports_abc=0.5=py_1
   - binutils_impl_linux-64=2.35.1=h193b22a_2
   - binutils_linux-64=2.35=h67ddf6f_30
+  - blas=1.1=openblas
   - bleach=3.3.0=pyhd3eb1b0_0
   - bzip2=1.0.8=h7f98852_4
   - c-ares=1.17.1=h7f98852_1
-  - ca-certificates=2022.5.18.1=ha878542_0
+  - ca-certificates=2023.7.22=hbcca054_0
   - cairo=1.16.0=hcf35c78_1003
   - certifi=2019.11.28=py27h8c360ce_1
   - cffi=1.13.2=py27h2e261b9_0
@@ -41,6 +42,7 @@ dependencies:
   - ffmpeg=4.1.3=h167e202_0
   - fontconfig=2.13.1=hba837de_1004
   - freetype=2.10.4=h0708190_1
+  - funcsigs=1.0.2=py_3
   - functools32=3.2.3.2=py_3
   - future=0.18.2=py27h8c360ce_1
   - futures=3.3.0=py27h8c360ce_1
@@ -61,6 +63,7 @@ dependencies:
   - harfbuzz=2.4.0=h9f30f68_3
   - hdf4=4.2.13=h10796ff_1004
   - hdf5=1.10.4=hb1b8bf9_0
+  - hypre=2.15.1=hc98498a_1002
   - icu=64.2=he1b5a44_1
   - idna=2.10=pyhd3eb1b0_0
   - imageio=2.4.1=py27_1000
@@ -70,6 +73,7 @@ dependencies:
   - importlib_resources=1.4.0=py27h8c360ce_0
   - ipaddress=1.0.23=py_0
   - ipykernel=4.10.0=py27_0
+  - ipympl=0.2.1=py27_1002
   - ipython=5.8.0=py27_0
   - ipython_genutils=0.2.0=pyhd3eb1b0_1
   - ipywidgets=7.6.0=pyhd3eb1b0_1
@@ -101,6 +105,7 @@ dependencies:
   - libiconv=1.16=h516909a_0
   - liblapack=3.8.0=17_openblas
   - liblapacke=3.8.0=17_openblas
+  - libllvm8=8.0.1=hc9558a2_0
   - libnetcdf=4.6.1=h11d0813_2
   - libnghttp2=1.43.0=h812cca2_0
   - libogg=1.3.2=h7b6447c_0
@@ -118,6 +123,7 @@ dependencies:
   - libxml2=2.9.10=hee79883_0
   - libxslt=1.1.33=h31b3aaa_0
   - linecache2=1.0.0=py_1
+  - llvmlite=0.31.0=py27h5ee40b5_1
   - lxml=4.5.0=py27hcde611f_1
   - lz4-c=1.8.3=he1b5a44_1001
   - markupsafe=1.1.1=py27h7b6447c_0
@@ -125,14 +131,21 @@ dependencies:
   - matplotlib-base=2.2.5=py27h250f245_1
   - mayavi=4.7.1=py27h7eb8c7e_2
   - meshio=2.3.10=py_0
+  - metis=5.1.0=h58526e2_1006
   - mistune=0.8.4=py27h7b6447c_0
   - more-itertools=5.0.0=py_0
+  - mpi=1.0=mpich
+  - mpi4py=2.0.0=py27_2
+  - mpich=3.2.1=hc99cbb1_1014
+  - mscorefonts=0.0.1=3
+  - mumps-mpi=5.1.2=blas_openblasha5050ec_0
   - nbconvert=5.6.1=py27_0
   - nbformat=4.4.0=py27_0
   - ncurses=6.2=h58526e2_4
   - netcdf4=1.4.2=py27h808af73_0
   - nettle=3.6=he412f7d_0
   - notebook=5.7.10=py27_0
+  - numba=0.47.0=py27hb3f55d8_0
   - numpy=1.16.5=py27h95a1406_0
   - olefile=0.46=pyh9f0ad1d_1
   - openblas=0.2.20=8
@@ -143,8 +156,12 @@ dependencies:
   - pandas=0.24.2=py27he6710b0_0
   - pandoc=2.12=h06a4308_0
   - pandocfilters=1.4.2=py27_1
+  - parmetis=4.0.3=h9f7b9cf_1003
   - pathlib2=2.3.5=py27h8c360ce_1
+  - patsy=0.5.1=py_0
   - pcre=8.44=he1b5a44_0
+  - petsc=3.10.2=blas_openblash330393b_0
+  - petsc4py=3.10.0=py27h0587ea6_1003
   - pexpect=4.8.0=pyhd3eb1b0_3
   - pickleshare=0.7.5=py27_0
   - pip=20.1.1=pyh9f0ad1d_0
@@ -154,6 +171,7 @@ dependencies:
   - prometheus_client=0.9.0=pyhd3eb1b0_0
   - prompt_toolkit=1.0.15=py27_0
   - pthread-stubs=0.4=h36c2ea0_1001
+  - ptscotch=6.0.8=h2e95eaa_0
   - ptyprocess=0.7.0=pyhd3eb1b0_2
   - pycparser=2.20=py_2
   - pyface=7.3.0=pyh44b312d_1
@@ -167,6 +185,7 @@ dependencies:
   - python=2.7.15=h5a48372_1011_cpython
   - python-dateutil=2.8.1=py_0
   - python_abi=2.7=1_cp27mu
+  - pytrilinos=12.18.1=py27hf476568_0
   - pytz=2020.1=pyh9f0ad1d_0
   - pyvista=0.22.4=py_1
   - pyzmq=18.1.0=py27he6710b0_0
@@ -176,9 +195,13 @@ dependencies:
   - readline=8.0=he28a2e2_2
   - requests=2.25.1=pyhd3eb1b0_0
   - retrying=1.3.3=py_2
+  - scalapack=2.0.2=hfacbc1e_1006
   - scandir=1.10.0=py27hdf8410d_1
+  - scikit-learn=0.19.2=py27_blas_openblasha84fab4_201
   - scipy=1.2.1=py27h921218d_2
   - scooby=0.5.6=pyh9f0ad1d_0
+  - scotch=6.0.8=h0eec0ba_1
+  - seaborn=0.9.0=py_2
   - send2trash=1.5.0=pyhd3eb1b0_1
   - setuptools=44.0.0=py27_0
   - simplegeneric=0.8.1=py27_2
@@ -191,7 +214,9 @@ dependencies:
   - sphinxcontrib-napoleon=0.7=py_0
   - sphinxcontrib-websupport=1.2.4=pyh9f0ad1d_0
   - sqlite=3.34.0=h74cdb3f_0
+  - statsmodels=0.10.2=py27hc1659b7_0
   - subprocess32=3.5.4=py27h516909a_0
+  - suitesparse=4.5.6=blas_openblash55dcaef_201
   - sysroot_linux-64=2.12=h77966d4_13
   - tbb=2020.2=h4bd325d_4
   - terminado=0.8.3=py27_0
@@ -229,12 +254,12 @@ dependencies:
   - zlib=1.2.11=h516909a_1010
   - zstd=1.4.4=h3b9ef0a_2
   - pip:
-    - chardet==4.0.0
-    - enum34==1.1.10
-    - fipy==3.4.2.1
-    - moviepy==1.0.3
-    - pillow==6.2.2
-    - proglog==0.1.9
-    - tqdm==4.59.0
-    - urllib3==1.26.3
+      - chardet==4.0.0
+      - enum34==1.1.10
+      - fipy==3.4.2.1
+      - moviepy==1.0.3
+      - pillow==6.2.2
+      - proglog==0.1.9
+      - tqdm==4.59.0
+      - urllib3==1.26.3
 prefix: /home/npradeep96/miniconda3/envs/fipyenv
